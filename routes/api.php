@@ -22,10 +22,23 @@ Route::middleware(['auth:sanctum', 'supervisor'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::prefix('users')->group(function () {
-        Route::get('/', 'RoleController@index');
-        Route::post('/assign', 'RoleController@assign');
 
+    Route::prefix('user/{id}')->group(function () {
+        Route::post('update', 'UserController@update');
+        Route::post('deactivate', 'UserController@deactivate');
+        Route::post('activate', 'UserController@activate');
+        Route::post('/change-password', 'UserAuthController@changePassword');
+    });
+    Route::prefix('users')->group(function () {
+        Route::get('/', 'UserController@index');
+        Route::post('/assign', 'UserController@deactivate');
+        Route::post('/assign', 'UserController@activate');
+        Route::prefix('store')->group(function () {
+            Route::post('/assign', 'UserController@changeStore');
+        });
+        Route::prefix('roles')->group(function () {
+            Route::post('/assign', 'RoleController@assign');
+        });
     });
     Route::prefix('warehouse')->group(function () {
         Route::get('/', 'WarehouseController@index');
@@ -51,12 +64,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('invoice')->group(function () {
         Route::get('/', 'InvoiceController@index');
+        Route::post('/draft', 'InvoiceController@toJson');
         Route::get('/retract/all', 'InvoiceController@retractRequest');
         Route::post('/', 'InvoiceController@store');
         Route::get('/retract/accept/{invoice}', 'InvoiceController@acceptRetract');
-        Route::prefix('store')->group(function () {
-            Route::get('{id}', 'InvoiceController@storeinvoice');
-            Route::post('{id}/retract', 'InvoiceController@retract');
+        Route::prefix('payment')->group(function () {
+            Route::put('/', 'PaymentModeController@update');
+        });
+        Route::prefix('filter')->group(function () {
+            Route::post('/dates', 'InvoiceController@filterBetweenDates');
+            Route::post('/code', 'InvoiceController@filterByCode');
+            Route::get('/today', 'InvoiceController@filterToday');
+            Route::get('/this_week', 'InvoiceController@filterBetweenDates');
+            Route::get('/this_month', 'InvoiceController@filterBetweenDates');
+            Route::get('/this_year', 'InvoiceController@filterBetweenDates');
+        });
+        Route::prefix('store/{id}')->group(function () {
+            Route::get('/', 'InvoiceController@storeinvoice');
+            Route::post('/retract', 'InvoiceController@retract');
+            Route::get('/chartData', 'InvoiceController@chartData');
         });
     });
     Route::prefix('waybill')->group(function () {
@@ -67,6 +93,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('products')->group(function () {
         Route::get('/', 'ProductController@index');
+        Route::put('/', 'ProductController@edit');
         Route::get('/store/{store_id}', 'ProductController@showStoreProducts');
         Route::get('/warehouse/stock', 'ProductController@warehouseStock');
         Route::post('/', 'ProductController@store');
@@ -74,5 +101,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::prefix('request')->group(function () {
             Route::post('/', 'TransferController@store');
         });
+    });
+    Route::prefix('report')->group(function () {
+        Route::get('/stores', 'ReportController@storesReport');
+        Route::get('/stores/chart', 'ReportController@storeChat');
+
     });
 });
