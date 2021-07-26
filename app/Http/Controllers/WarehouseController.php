@@ -16,13 +16,10 @@ class WarehouseController extends BaseController
     {
         try {
             Log::info('Start');
-
             $warehouse = Warehouse::with(['warehouseStocks.product'])->get();
             return $this->sendMessage(WarehouseResource::collection($warehouse));
-
         } catch (Exception $e) {
-           Log::info($e);
-
+           Log::error($e);
         }
 
     }
