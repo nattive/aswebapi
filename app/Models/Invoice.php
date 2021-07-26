@@ -10,7 +10,9 @@ class Invoice extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
-
+    protected $casts = [
+        'due_date' => 'datetime',
+    ];
     /**
      * Get all of the invoiceItems for the Invoice
      *
@@ -38,12 +40,10 @@ class Invoice extends Model
     {
         return $this->hasOne(Customer::class);
     }
-    public function getGeneratedByUserIdAttribute($value)
-    {
-       return User::find($value);
-    }
+
     public function getCreatedAtAttribute($value)
     {
-       return Carbon::parse($value)->format('d/m/y');
+        return Carbon::parse($this->updated_at)->toDateTimeString();
     }
+
 }

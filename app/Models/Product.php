@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,5 +31,9 @@ class Product extends Model
     public function storeStocks()
     {
         return $this->hasMany(StoreStock::class, 'product_id' );
+    }
+    public function getUpdatedAtAttribute($value)
+    {
+        return Carbon::parse($this)->toDateString();
     }
 }

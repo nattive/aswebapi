@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\InvoiceRequest;
+use App\Http\Resources\InvoiceResource;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Store;
 use App\Models\StoreStock;
+use App\Traits\Helpers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends BaseController
 {
+    use Helpers;
     public function index()
     {
         $invoices = Invoice::with(["invoiceItems.product", "paymentModes"])->get();
@@ -39,7 +42,7 @@ class InvoiceController extends BaseController
 
         }
         $invoicesCount = Invoice::all()->count();
-        $code = 'ONI' . '/' . Carbon::now()->format('m') . '0' . $invoicesCount + 1;
+        $code = Store::find($request->store_id)->short_code . '/' . Carbon::now()->format('m') . '0' . $invoicesCount + 1;
         $invoice = $customer->invoices()->create([
             'code' => $code,
             'generated_by_user_id' => auth('sanctum')->user()->id,
@@ -56,7 +59,8 @@ class InvoiceController extends BaseController
             ]);
             $ssp = StoreStock::where([["store_id", $request->store_id], ['product_id', $inv['productId']]])->first();
             if ($ssp->qty_in_stock < $inv['quantity']) {
-                return $this->sendMessage(null, [compact('ssp')], false, 422);
+                return $this->sendMessage('Product out of stock',['Product out of stock'], false, 422);
+                // return $this->sendMessage('Product out of stock', [compact('ssp')], false, 422);
             }
             $ssp->update([
                 'qty_in_stock' => $ssp->qty_in_stock - $inv['quantity'],
@@ -72,6 +76,10 @@ class InvoiceController extends BaseController
         }
 
         return $this->sendMessage('Invoice created!');
+    }
+    public function toJson(Request $request)
+    {
+        return $request->all();
     }
     public function storeinvoice($id)
     {
@@ -123,6 +131,60 @@ class InvoiceController extends BaseController
             return $this->sendMessage("Invoice reversed");
         }
         return $this->sendMessage(null, ['This invoice is not valid'], false);
+
+    }
+    public function filterBetweenDates(Request $request)
+    {
+        $r = $request->validate([
+            'dates' => 'required|array',
+            'store_id' => 'integer',
+        ]);
+        $from = Carbon::parse($request->dates[0]);
+        if (array_key_exists(1, $request->dates)) {
+            $to = Carbon::parse($request->dates[1]);
+        } else {
+            $to = Carbon::now();
+        }
+        $to = Carbon::parse($request->to);
+        if (is_null($request->store_id)) {
+            $invoice = Invoice::whereBetween('created_at', [$from, $to])->get();
+            return $this->sendMessage($invoice);
+        }
+        $invoice = Invoice::where('store_id', $request->store_id)->whereBetween('created_at', [$from, $to])->get();
+        return $this->sendMessage($invoice);
+    }
+    public function filterByCode(Request $request)
+    {
+        $r = $request->validate([
+            'code' => 'required',
+            'store_id' => 'integer',
+        ]);
+        if (is_null($request->store_id)) {
+            $invoice = Invoice::where(["code", $request->code])->get();
+            return $this->sendMessage($invoice);
+        }
+        $invoice = Invoice::where([['store_id', $request->store_id], ["code", $request->code]])->get();
+        return $this->sendMessage(InvoiceResource::collection($invoice));
+
+    }
+    public function filterToday(Request $request)
+    {
+        $r = $request->validate([
+            'store_id' => 'integer',
+        ]);
+        $now = Carbon::now();
+        $invoice = Invoice::whereBetween('created_at', $now)->get();
+        return $this->sendMessage(InvoiceResource::collection($invoice));
+    }
+    public function chartData($id)
+    {
+
+        $start = new Carbon("first day of this month");
+        $end = Carbon::now();
+        $invoices = Invoice::where('store_id', $id)->whereBetween('created_at', [$start, $end])->get()->groupBy(function ($d) {
+            return Carbon::parse($d->created_at)->format('d');
+        });
+        return $this->sendMessage($invoices);
 
     }
 }

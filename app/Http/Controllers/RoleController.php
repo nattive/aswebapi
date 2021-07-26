@@ -9,7 +9,6 @@ class RoleController extends BaseController
 {
     public function index()
     {
-       return $this->sendMessage(User::all());
     }
     public function assign(Request $request)
     {
