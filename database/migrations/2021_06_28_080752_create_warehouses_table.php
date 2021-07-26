@@ -19,7 +19,6 @@ class CreateWarehousesTable extends Migration
             $table->string('short_code', 3);
             $table->text('address');
             $table->integer('supervisor_id')->nullable();
-            $table->integer('warehouse_stock_id')->nullable();
             $table->timestamps();
         });
     }

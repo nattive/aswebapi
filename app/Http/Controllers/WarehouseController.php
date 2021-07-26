@@ -5,23 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\WarehouseRequest;
 use App\Http\Resources\WarehouseResource;
 use App\Models\Warehouse;
-use Exception;
 use Illuminate\Http\Client\Request;
-use Illuminate\Support\Facades\Log;
 
 class WarehouseController extends BaseController
 {
 
     public function index()
     {
-        try {
-            Log::info('Start');
-            $warehouse = Warehouse::with(['warehouseStocks.product'])->get();
-            return $this->sendMessage(WarehouseResource::collection($warehouse));
-        } catch (Exception $e) {
-           Log::error($e);
-        }
-
+        $warehouse = Warehouse::with(['warehouseStocks.product'])->get();
+         return $this->sendMessage(WarehouseResource::collection($warehouse));
     }
 
     public function store(WarehouseRequest $request)
@@ -35,8 +27,8 @@ class WarehouseController extends BaseController
 
     public function show($id)
     {
-        $warehouse = Warehouse::where('id', $id)->with(['warehouseStocks.product', 'waybills.products'])->first();
-        return $this->sendMessage(new WarehouseResource($warehouse));
+        $warehouse = Warehouse::where('id', $id)->with(['warehouseStocks.product','waybills.products'])->first();
+       return $this->sendMessage($warehouse);
 
     }
 

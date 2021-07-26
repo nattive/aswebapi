@@ -27,7 +27,7 @@ class Waybill extends Model
      */
     public function products()
     {
-        return $this->hasMany(Product::class);
+        return $this->hasMany(Product::class, 'waybill_id');
     }
     public function getCreatedAtAttribute($value)
     {

@@ -21,7 +21,7 @@ class Product extends Model
      }
       public function waybill()
     {
-        return $this->belongsTo(Waybill::class);
+        return $this->belongsTo(Waybill::class, 'product_id');
     }
     /**
      * Get all of the StoreStock for the Product
