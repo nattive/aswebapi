@@ -21,7 +21,7 @@ class Product extends Model
      }
       public function waybill()
     {
-        return $this->belongsTo(Waybill::class, 'product_id');
+        return $this->belongsTo(Waybill::class);
     }
     /**
      * Get all of the StoreStock for the Product
@@ -30,10 +30,10 @@ class Product extends Model
      */
     public function storeStocks()
     {
-        return $this->hasMany(StoreStock::class, 'product_id' );
+        return $this->hasMany(StoreStock::class);
     }
     public function getUpdatedAtAttribute($value)
     {
-        return Carbon::parse($this)->toDateString();
+        return Carbon::parse($value)->toDateString();
     }
 }

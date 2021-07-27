@@ -29,9 +29,9 @@ class InvoiceController extends BaseController
         if ($request->customerId) {
             $customer = Customer::find($request->customerId);
         } else {
-            $customer = Customer::where('phonenumer', $request->customerId)->orWhere('email', $request->customerEmail)->first();
+            $customer = Customer::where('phonenumer', $request->customerPhone)->orWhere('email', $request->customerEmail)->first();
             if (is_null($customer)) {
-                $customer = Customer::findOrNew([
+                $customer = Customer::create([
                     'phonenumer' => $request->customerPhone,
                     'email' => $request->customerEmail,
                     'name' => $request->customerName,
@@ -130,7 +130,7 @@ class InvoiceController extends BaseController
 
             return $this->sendMessage("Invoice reversed");
         }
-        return $this->sendMessage(null, ['This invoice is not valid'], false);
+        return $this->sendMessage(null, ['This invoice is not valid'], false, 404);
 
     }
     public function filterBetweenDates(Request $request)
@@ -145,7 +145,7 @@ class InvoiceController extends BaseController
         } else {
             $to = Carbon::now();
         }
-        $to = Carbon::parse($request->to);
+        // $to = Carbon::parse($request->to);
         if (is_null($request->store_id)) {
             $invoice = Invoice::whereBetween('created_at', [$from, $to])->get();
             return $this->sendMessage($invoice);
@@ -164,6 +164,10 @@ class InvoiceController extends BaseController
             return $this->sendMessage($invoice);
         }
         $invoice = Invoice::where([['store_id', $request->store_id], ["code", $request->code]])->get();
+      if (is_null($invoice)) {
+          return $this->sendMessage(null, ['The invoice is not found'], false, 404);
+
+      }
         return $this->sendMessage(InvoiceResource::collection($invoice));
 
     }

@@ -24,7 +24,7 @@ class WarehouseResource extends JsonResource
             'address' => $this->address,
             'supervisor' => User::find($this->supervisor_id),
             "Transferred" => Transfer::where("from", $this->id)->get(),
-            'warehouseStocks' => $this->has('warehouseStocks') ?? WarehouseStockResource::collection($this->warehouseStocks),
+            'warehouseStocks' =>   WarehouseStockResource::collection($this->warehouseStocks),
             "out_stocked" => $this->warehouseStocks()->where("qty_in_stock", "<", 0)->get(),
             'waybills' => $this->waybills,
         ];

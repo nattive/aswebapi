@@ -33,4 +33,13 @@ class Waybill extends Model
     {
         return  Carbon::parse($value)->format('d/m/Y');
     }
+    /**
+     * Get the waybillHistory associated with the Waybill
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function waybillHistory()
+    {
+        return $this->hasMany(waybillHistory::class);
+    }
 }

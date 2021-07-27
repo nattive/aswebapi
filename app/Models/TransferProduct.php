@@ -19,4 +19,13 @@ class TransferProduct extends Model
     {
         return $this->belongsTo(Transfer::class);
     }
+    /**
+     * Get the product that owns the TransferProduct
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }

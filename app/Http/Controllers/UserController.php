@@ -73,17 +73,20 @@ class UserController extends BaseController
 
     }
 
-    public function deactivate(User $user)
+    public function deactivate($user)
     {
-        $user = $user->update([
-            'active' => false,
-        ]);
-        return $this->sendMessage("User  updated");
+        $user = User::where('id', $user)->first();
+
+        $user->active = 0 ;
+        $user->save() ;
+
+        return $this->sendMessage( $user);
 
     }
-    public function activate(User $user)
+    public function activate( $user)
     {
-        $user = $user->update([
+        $user = User::find($user);
+        $user->update([
             'active' => true,
         ]);
         return $this->sendMessage("User  updated");

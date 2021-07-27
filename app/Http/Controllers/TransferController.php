@@ -50,7 +50,7 @@ class TransferController extends BaseController
     {
         $warehouse = Warehouse::findOrFail($warehouse_id);
         $requests = Transfer::where([['from', $warehouse->id], ['approved_by_id', null]])->get();
-        return $this->sendMessage( $requests);
+        return $this->sendMessage(TransferResource::collection($requests) );
     }
 
     public function accept(Request $request)

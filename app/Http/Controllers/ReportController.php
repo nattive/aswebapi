@@ -12,8 +12,14 @@ class ReportController extends BaseController
     {
         $stores = Store::all();
         $report = [];
+       $top = ['store' => null, 'count' => 0];
+
         foreach ($stores as $store) {
             $stockWorth = 0;
+
+            if (count($store->invoices) > $top['count']) {
+                $top = ['store' => $store, 'count' => count($store->invoices)];
+            }
             foreach ($store->storeStocks as $ss) {
                 $tt = $ss->qty_in_stock * $ss->product()->first()->price;
                 $stockWorth += $tt;

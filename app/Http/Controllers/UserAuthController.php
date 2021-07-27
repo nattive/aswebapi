@@ -23,7 +23,7 @@ class UserAuthController extends BaseController
         }
 
         $user = User::where('email', $request['email'])->firstOrFail();
-        if ($user->active === false) {
+        if ($user->active === 0) {
             return $this->sendMessage('Inactive account', ['Account suspended'], false, 401, true);
         }
         $token = $user->createToken('auth_token')->plainTextToken;

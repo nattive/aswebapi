@@ -33,7 +33,7 @@ class TransferResource extends JsonResource
             'id' => $this->id,
             'ref_code' => $this->ref_code,
             'to' => $to,
-            'products' => $this->transferProducts,
+            'products' => $this->transferProducts()->with('product')->get(),
             'created_at' => Carbon::parse($this->created_at)->diffForHumans(),
         ];
     }

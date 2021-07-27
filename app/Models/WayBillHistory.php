@@ -5,29 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class StoreStock extends Model
+class WayBillHistory extends Model
 {
-    protected $guarded = ['id'];
-
+     protected $guarded = ['id'];
     use HasFactory;
+
     /**
-     * Get the product that owns the StoreStock
+     * Get the product that owns the WayBillHistory
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function product()
     {
-        return $this->belongsTo(Product::class );
+        return $this->belongsTo(Product::class);
     }
 
     /**
-     * Get the store that owns the StoreStock
+     * Get the waybill that owns the WayBillHistory
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function store()
+    public function waybill()
     {
-        return $this->belongsTo(Store::class);
+        return $this->belongsTo(Waybill::class);
     }
-
 }

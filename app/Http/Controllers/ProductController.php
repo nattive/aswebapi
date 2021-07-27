@@ -8,6 +8,8 @@ use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\WarehouseStock;
 use App\Models\Waybill;
+use App\Models\WayBillHistory;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -16,7 +18,10 @@ class ProductController extends BaseController
     public function index()
     {
         $products = Product::with(['warehouseStock.warehouse', 'waybill'])->get();
-        return $this->sendMessage($products);
+        $start = new Carbon("first day of this month");
+        $end = Carbon::now();
+        $today = Product::whereBetween('created_at', [$start, $end])->get();
+        return $this->sendMessage(compact('products', 'today'));
     }
     public function uploadProducts(ProductRequest $request)
     {
@@ -46,6 +51,11 @@ class ProductController extends BaseController
             /**
              * Update stock
              */
+            WayBillHistory::create([
+                'waybill_id' => $waybill->id,
+                'product_id' => $newProduct->id,
+                'qty' => $product->qty,
+            ]);
             $warehouseStore = WarehouseStock::where([['product_id', $newProduct->id], ['warehouse_id', request('warehouse_id')]])->first();
             if (is_null($warehouseStore)) {
                 WarehouseStock::create([
@@ -73,8 +83,8 @@ class ProductController extends BaseController
         ]);
         $product = Product::find($request->id);
         $product->update($request->only([
-            'name' ,
-            'price'
+            'name',
+            'price',
         ]));
 
         return $this->sendMessage('Product Updated');

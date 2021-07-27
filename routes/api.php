@@ -25,7 +25,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('user/{id}')->group(function () {
         Route::post('update', 'UserController@update');
-        Route::post('deactivate', 'UserController@deactivate');
+        Route::get('deactivate', 'UserController@deactivate');
         Route::post('activate', 'UserController@activate');
         Route::post('/change-password', 'UserAuthController@changePassword');
     });
@@ -87,6 +87,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('waybill')->group(function () {
         Route::get('/', 'WaybillController@index');
         Route::post('/', 'WaybillController@store');
+        Route::post('/filter', 'WaybillController@filter');
+        Route::post('/chartData', 'WaybillController@filter');
         Route::get('{id}', 'WaybillController@show');
         Route::post('/add-product/{id}', 'WaybillController@addProduct');
     });
