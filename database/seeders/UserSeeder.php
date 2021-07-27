@@ -25,6 +25,15 @@ class UserSeeder extends Seeder
             "store_id" => "1",
             "address" => "18 lorem",
         ]);
+        User::create([
+            'name' => 'Femi Ola',
+            'email' => 'ola@example.com',
+            'password' => bcrypt('password'),
+            "role" => "SUPERVISOR",
+            "phonenumber" => "08045125632",
+            "store_id" => "1",
+            "address" => "18 lorem",
+        ]);
     }
 
 
