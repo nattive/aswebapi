@@ -43,6 +43,7 @@ class UserAuthController extends BaseController
             'confirm_password' => 'required|same:password',
         ]);
 
+        
         if ($validator->fails()) {
             return $this->sendMessage('Error validation', $validator->errors(), false, 422);
         }
