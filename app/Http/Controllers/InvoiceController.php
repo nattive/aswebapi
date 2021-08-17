@@ -26,6 +26,7 @@ class InvoiceController extends BaseController
     public function store(InvoiceRequest $request)
     {
         $customer = '';
+        $store = Store::find($request->store_id);
         if ($request->customerId) {
             $customer = Customer::find($request->customerId);
         } else {
@@ -41,8 +42,8 @@ class InvoiceController extends BaseController
             }
 
         }
-        $invoicesCount = Invoice::all()->count();
-        $code = Store::find($request->store_id)->short_code . '/' . Carbon::now()->format('m') . '0' . $invoicesCount + 1;
+        $invoicesCount = count(Invoice::all())  + 1;
+        $code =  $store->short_code . '/' . Carbon::now()->format('m') . '0' . $invoicesCount;
         $invoice = $customer->invoices()->create([
             'code' => $code,
             'generated_by_user_id' => auth('sanctum')->user()->id,
@@ -66,7 +67,12 @@ class InvoiceController extends BaseController
                 'qty_in_stock' => $ssp->qty_in_stock - $inv['quantity'],
             ]);
         }
-        Log::info("invoice created");
+        $invoiceData = [
+            'type' => 'Invoice Created',
+            'invoice' => $invoice,
+            'store' => $store
+        ];
+        $this->updateNotification($invoiceData);
         foreach ($request->paymentInformation as $paymentInfo) {
             $invoice->paymentModes()->create([
                 'amount' => $paymentInfo['amount'],

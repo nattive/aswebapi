@@ -10,9 +10,24 @@ use Carbon\Carbon;
 
 /**
  * All tutor helper methods
+ * @param array $notification
+ * $type = Invoice Created |
  */
 trait Helpers
 {
+    public function updateNotification(array $notification)
+    {
+        switch ($notification['type']) {
+            case 'Invoice Created':
+                $topic = "Invoice Created";
+                $body = "An invoice has just been generated";
+                break;
+
+            default:
+                # code...
+                break;
+        }
+    }
     public function UserHasAccess($store_id = null, $warehouse_id = null)
     {
         $user = auth("sanctum")->user();

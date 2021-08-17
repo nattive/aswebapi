@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Warehouse;
 use App\Models\Waybill;
@@ -69,7 +68,7 @@ class WaybillController extends BaseController
                 break;
 
             case 'code':
-                $waybill =  Waybill::where('code',  $request->code)->get();
+                $waybill = Waybill::where('code', $request->code)->get();
                 return $this->sendMessage($waybill);
 
                 break;
@@ -83,6 +82,7 @@ class WaybillController extends BaseController
     }
     public function store(Request $request)
     {
+        $wbNt = count(Waybill::all()) + 1;
         $wayBillRequest = $request->validate([
             'from' => 'nullable',
             'warehouse_id' => 'required|integer',
@@ -91,8 +91,8 @@ class WaybillController extends BaseController
         if (is_null($warehouse)) {
             return $this->sendMessage(["Warehouse doesn't exist"], false, 404);
         }
-        $allWaybills = count(Waybill::all()) < 1 ? 0 : count(Waybill::all());
-        $code = $warehouse->short_code . '/' . Carbon::now()->format('M') . '/' . $allWaybills + 1;
+
+        $code = $warehouse->short_code . '/' . Carbon::now()->format('M') . '/' . $wbNt ;
         $waybill = Waybill::create([
             'code' => $code,
             'from' => $request->from,
@@ -126,7 +126,7 @@ class WaybillController extends BaseController
         ]);
         return $this->sendMessage('Product uploaded successfully');
     }
-     public function chartData()
+    public function chartData()
     {
 
         $start = new Carbon("first day of this year");

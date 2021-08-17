@@ -17,5 +17,5 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/', function () {
-    return Product::all();
+    return view('email.invoice-notify');
 });
