@@ -83,6 +83,7 @@ class WaybillController extends BaseController
     }
     public function store(Request $request)
     {
+	$wbNt = count(Waybill::all()) + 1;
         $wayBillRequest = $request->validate([
             'from' => 'nullable',
             'warehouse_id' => 'required|integer',
@@ -91,8 +92,8 @@ class WaybillController extends BaseController
         if (is_null($warehouse)) {
             return $this->sendMessage(["Warehouse doesn't exist"], false, 404);
         }
-        $allWaybills = count(Waybill::all()) < 1 ? 0 : count(Waybill::all());
-        $code = $warehouse->short_code . '/' . Carbon::now()->format('M') . '/' . $allWaybills + 1;
+    
+        $code = $warehouse->short_code . '/' . Carbon::now()->format('M') . '/' . $wbNt ;
         $waybill = Waybill::create([
             'code' => $code,
             'from' => $request->from,
