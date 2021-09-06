@@ -32,6 +32,7 @@ class InvoiceRequest extends FormRequest
             'invoiceItem' => 'required',
             'paymentInformation' => 'required',
             'totalAmount' => 'required',
+            'discount_id' => 'nullable',
         ];
     }
 }

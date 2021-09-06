@@ -92,12 +92,24 @@ class WaybillController extends BaseController
             return $this->sendMessage(["Warehouse doesn't exist"], false, 404);
         }
 
-        $code = $warehouse->short_code . '/' . Carbon::now()->format('M') . '/' . $wbNt ;
+        $code = $warehouse->short_code . '/WB//' . Carbon::now()->format('M') . '/' . $wbNt;
         $waybill = Waybill::create([
             'code' => $code,
             'from' => $request->from,
             'warehouse_id' => $request->warehouse_id,
         ]);
+        // notification
+        $notification = [
+            'type' => 'Waybill Created',
+            "tablehead" => ["code", "from", "warehouse"],
+            "tablebody" => [$code, $request->from, $waybill->warehouse()->first()->name],
+            'body' => "A waybill has been created",
+        ];
+        try {
+            $this->updateNotification($notification);
+        } catch (\Throwable$th) {
+            return $this->sendMessage($waybill, ["Waybill successfully, but mail notification error"]);
+        }
         return $this->sendMessage($waybill);
     }
 

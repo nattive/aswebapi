@@ -9,13 +9,14 @@ class BaseController extends Controller
         if ($success == true) {
             return response()->json([
                 'message' => $message,
+                "payload" => $errorMessage,
                 'success' => 'true',
             ], $code);
         }
         return response()->json([
             'errors' => $errorMessage,
             'success' => 'false',
-            'failedAuth' =>  $failAuth
+            'failedAuth' => $failAuth,
         ], $code);
 
     }

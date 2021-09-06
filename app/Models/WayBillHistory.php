@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,5 +29,9 @@ class WayBillHistory extends Model
     public function waybill()
     {
         return $this->belongsTo(Waybill::class);
+    }
+     public function getCreatedAtAttribute($value)
+    {
+        return Carbon::parse($this->updated_at)->toDateTimeString();
     }
 }

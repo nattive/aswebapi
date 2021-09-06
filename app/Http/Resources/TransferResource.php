@@ -21,9 +21,19 @@ class TransferResource extends JsonResource
         switch ($this->transfer_type) {
             case 'WAREHOUSE_TO_STORE':
                 $to = Store::findOrFail($this->to);
+                $from = Warehouse::findOrFail($this->from);
                 break;
             case 'WAREHOUSE_TO_WAREHOUSE':
                 $to = Warehouse::findOrFail($this->to);
+                $from = Warehouse::findOrFail($this->from);
+                break;
+            case 'STORE_TO_STORE':
+                $to = Store::findOrFail($this->to);
+                $from = Store::findOrFail($this->from);
+                break;
+            case 'STORE_TO_WAREHOUSE':
+                $to = Store::findOrFail($this->to);
+                $from = Warehouse::findOrFail($this->from);
                 break;
             default:
                 break;
@@ -33,6 +43,7 @@ class TransferResource extends JsonResource
             'id' => $this->id,
             'ref_code' => $this->ref_code,
             'to' => $to,
+            'from' => $from,
             'products' => $this->transferProducts()->with('product')->get(),
             'created_at' => Carbon::parse($this->created_at)->diffForHumans(),
         ];

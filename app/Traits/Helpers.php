@@ -2,11 +2,14 @@
 
 namespace App\Traits;
 
+use App\Mail\InvoiceMail;
 use App\Models\Store;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\Waybill;
+use App\Notifications\GeneralNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * All tutor helper methods
@@ -17,14 +20,26 @@ trait Helpers
 {
     public function updateNotification(array $notification)
     {
+        $toNotify = User::where('role', 'SUPERVISOR')->where('role', 'DIRECTOR')
+            ->orWhere('role', 'SUPERVISOR')
+            ->get();
         switch ($notification['type']) {
             case 'Invoice Created':
-                $topic = "Invoice Created";
-                $body = "An invoice has just been generated";
+                $other = [
+                    'topic' => "Invoice Created",
+                    'body' => "An invoice has just been generated",
+                ];
+                $notifyArray = array_merge($other, $notification);
+                foreach ($toNotify as $user) {
+                    Mail::to($user->email)
+                        ->send(new InvoiceMail($notifyArray));
+                }
                 break;
-
             default:
-                # code...
+                foreach ($toNotify as $user) {
+                    $array = array_merge(['greetings' => "Hi {$user->name}"], $notification);
+                    $user->notify(new GeneralNotification($array));
+                }
                 break;
         }
     }

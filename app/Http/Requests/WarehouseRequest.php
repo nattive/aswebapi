@@ -25,7 +25,7 @@ class WarehouseRequest extends FormRequest
     {
         return [
             'name' => 'required|max:150',
-            'short_code' => 'required|max:3',
+            'short_code' => 'required|max:3|unique:warehouses,short_code',
             'address' => 'required|max:200',
             'supervisor_id' => 'integer|nullable',
             'warehouse_stock_id' => 'integer|nullable',

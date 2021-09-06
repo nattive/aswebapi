@@ -23,8 +23,8 @@ class StoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required | max:150',
-            'short_code' => 'required|max:3',
+            'name' => 'required | max:150 |unique:stores,name',
+            'short_code' => 'required|max:3|unique:stores,short_code',
             'address' => 'nullable',
             'supervisor_id' => 'nullable|integer',
             'store_stock_id' => 'nullable|integer',

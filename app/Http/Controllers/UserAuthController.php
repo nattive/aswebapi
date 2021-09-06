@@ -34,7 +34,7 @@ class UserAuthController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'phonenumber' => "required|unique:users",
-            'store_id' => 'integer|nullable',
+            'store_id' => 'integer|nullable|required_if:role,ATTENDANT',
             'address' => 'nullable',
             'role' => 'in:ATTENDANT,MANAGER,SUPERVISOR,DIRECTOR',
             'name' => 'required',
@@ -43,7 +43,7 @@ class UserAuthController extends BaseController
             'confirm_password' => 'required|same:password',
         ]);
 
-        
+
         if ($validator->fails()) {
             return $this->sendMessage('Error validation', $validator->errors(), false, 422);
         }

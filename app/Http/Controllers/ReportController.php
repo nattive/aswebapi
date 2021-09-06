@@ -12,7 +12,7 @@ class ReportController extends BaseController
     {
         $stores = Store::all();
         $report = [];
-       $top = ['store' => null, 'count' => 0];
+        $top = ['store' => null, 'count' => 0];
 
         foreach ($stores as $store) {
             $stockWorth = 0;
@@ -68,9 +68,12 @@ class ReportController extends BaseController
         $end = Carbon::now();
         $invoices = Invoice::whereBetween('created_at', [$start, $end])
             ->get()->groupBy(function ($d) {
-            return Carbon::parse($d->created_at)->format('d');
+            return Carbon::parse($d->created_at)->format('D-d');
         });
-        return $this->sendMessage($invoices);
+        $dueDate = Invoice::whereHas("paymentModes", function ($query) {
+            $query->where("type", "debt")->whereDate("due_date", "<", Carbon::now());
+        });
+        return $this->sendMessage(compact("invoices", "dueDate"));
 
     }
 }

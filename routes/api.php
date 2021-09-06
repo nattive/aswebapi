@@ -31,12 +31,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('users')->group(function () {
         Route::get('/', 'UserController@index');
-        Route::post('/assign', 'UserController@deactivate');
-        Route::post('/assign', 'UserController@activate');
+        Route::post('/deactivate', 'UserController@deactivate');
+        Route::post('/activate', 'UserController@activate');
         Route::prefix('store')->group(function () {
             Route::post('/assign', 'UserController@changeStore');
         });
-        Route::prefix('roles')->group(function () { Route::post('/assign', 'RoleController@assign');
+        Route::prefix('roles')->group(function () {
+            Route::post('/assign', 'RoleController@assign');
         });
     });
     Route::prefix('warehouse')->group(function () {
@@ -61,6 +62,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', 'CustomerController@index');
         Route::post('/', 'CustomerController@store');
     });
+    Route::prefix('discount')->group(function () {
+        Route::get('/', 'DiscountController@index');
+        Route::post('/', 'DiscountController@store');
+        Route::delete('/', 'DiscountController@destroy');
+    });
     Route::prefix('invoice')->group(function () {
         Route::get('/', 'InvoiceController@index');
         Route::post('/draft', 'InvoiceController@toJson');
@@ -73,10 +79,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::prefix('filter')->group(function () {
             Route::post('/dates', 'InvoiceController@filterBetweenDates');
             Route::post('/code', 'InvoiceController@filterByCode');
-            Route::get('/today', 'InvoiceController@filterToday');
-            Route::get('/this_week', 'InvoiceController@filterBetweenDates');
-            Route::get('/this_month', 'InvoiceController@filterBetweenDates');
-            Route::get('/this_year', 'InvoiceController@filterBetweenDates');
+            Route::post('/today', 'InvoiceController@filterToday');
+            Route::post('/this_week', 'InvoiceController@filterThisWeek');
+            Route::post('/this_month', 'InvoiceController@filterThisMonth');
+            Route::post('/this_year', 'InvoiceController@filterThisYear');
+            Route::post('/debt', 'InvoiceController@debt');
         });
         Route::prefix('store/{id}')->group(function () {
             Route::get('/', 'InvoiceController@storeinvoice');
@@ -94,6 +101,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('products')->group(function () {
         Route::get('/', 'ProductController@index');
+        Route::get('{id}', 'ProductController@show');
         Route::put('/', 'ProductController@edit');
         Route::get('/store/{store_id}', 'ProductController@showStoreProducts');
         Route::get('/warehouse/stock', 'ProductController@warehouseStock');

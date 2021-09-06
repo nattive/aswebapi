@@ -38,12 +38,20 @@ class Invoice extends Model
      */
     public function customer()
     {
-        return $this->hasOne(Customer::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function getCreatedAtAttribute($value)
     {
         return Carbon::parse($this->updated_at)->toDateTimeString();
     }
-
+    /**
+     * Get the store that owns the StoreStock
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
 }

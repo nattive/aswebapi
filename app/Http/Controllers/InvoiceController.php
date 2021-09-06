@@ -13,15 +13,14 @@ use App\Traits\Helpers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends BaseController
 {
     use Helpers;
     public function index()
     {
-        $invoices = Invoice::with(["invoiceItems.product", "paymentModes"])->get();
-        return $this->sendMessage($invoices);
+        $invoices = Invoice::with(["invoiceItems.product", "paymentModes"])->latest()->get();
+        return $this->sendMessage(InvoiceResource::collection($invoices));
     }
     public function store(InvoiceRequest $request)
     {
@@ -42,14 +41,15 @@ class InvoiceController extends BaseController
             }
 
         }
-        $invoicesCount = count(Invoice::all())  + 1;
-        $code =  $store->short_code . '/' . Carbon::now()->format('m') . '0' . $invoicesCount;
+        $invoicesCount = count(Invoice::all()) + 1;
+        $code = $store->short_code . '/INV//' . Carbon::now()->format('m') . '0' . $invoicesCount;
         $invoice = $customer->invoices()->create([
             'code' => $code,
             'generated_by_user_id' => auth('sanctum')->user()->id,
             'customer_id' => $customer->id,
             'total_amount' => $request->totalAmount,
             'store_id' => $request->store_id,
+            'discount_id' => $request->discount_id,
         ]);
         foreach ($request->invoiceItem as $inv) {
             InvoiceItem::create([
@@ -59,20 +59,24 @@ class InvoiceController extends BaseController
                 'amount' => $inv['total'],
             ]);
             $ssp = StoreStock::where([["store_id", $request->store_id], ['product_id', $inv['productId']]])->first();
+            if (!$ssp) {
+                return $this->sendMessage('Product does not exist in store', ['Product does not exist in store'], false, 422);
+            }
             if ($ssp->qty_in_stock < $inv['quantity']) {
-                return $this->sendMessage('Product out of stock',['Product out of stock'], false, 422);
+                return $this->sendMessage('Product out of stock', ['Product out of stock'], false, 422);
                 // return $this->sendMessage('Product out of stock', [compact('ssp')], false, 422);
             }
             $ssp->update([
                 'qty_in_stock' => $ssp->qty_in_stock - $inv['quantity'],
             ]);
         }
+
         $invoiceData = [
             'type' => 'Invoice Created',
-            'invoice' => $invoice,
-            'store' => $store
+            'invoice' => new InvoiceResource($invoice),
+            'store' => $store,
+            'invoiceItems' => $invoice->invoiceItems()->with('product')->latest()->get(),
         ];
-        $this->updateNotification($invoiceData);
         foreach ($request->paymentInformation as $paymentInfo) {
             $invoice->paymentModes()->create([
                 'amount' => $paymentInfo['amount'],
@@ -80,8 +84,9 @@ class InvoiceController extends BaseController
                 'due_date' => Arr::exists($paymentInfo, 'due_date') ?? $paymentInfo['due_date'],
             ]);
         }
+$this->updateNotification($invoiceData);
 
-        return $this->sendMessage('Invoice created!');
+        return $this->sendMessage(new InvoiceResource($invoice));
     }
     public function toJson(Request $request)
     {
@@ -89,8 +94,8 @@ class InvoiceController extends BaseController
     }
     public function storeinvoice($id)
     {
-        $invoices = Invoice::where('store_id', $id)->with(["invoiceItems.product", "paymentModes"])->get();
-        return $this->sendMessage($invoices);
+        $invoices = Invoice::where('store_id', $id)->with(["invoiceItems.product", "paymentModes"])->latest()->get();
+        return $this->sendMessage(InvoiceResource::collection($invoices));
     }
     public function retract(Request $request, $id)
     {
@@ -111,10 +116,16 @@ class InvoiceController extends BaseController
 
     public function retractRequest()
     {
-        $invoices = Store::where("supervisor_id", auth("sanctum")->user()->id)->with(["invoices" => function ($query) {
-            return $query->where('reversed_status', '=', "Pending");
-        }])->get();
-        return $this->sendMessage($invoices);
+        $user = auth("sanctum")->user();
+        if ($user->role === 'SUPERVISOR' || $user === 'DIRECTOR') {
+            $invoices = Invoice::where('reversed_status', '=', "Pending")->with("store")->get();
+            return $this->sendMessage(InvoiceResource::collection($invoices));
+        }
+        $invoices = Invoice::where('reversed_status', '=', "Pending")
+            ->whereHas("store", function ($query) use ($user) {
+                return $query->where("supervisor_id", $user->id);
+            })->latest()->get();
+        return $this->sendMessage(InvoiceResource::collection($invoices));
     }
     public function acceptRetract($invoice_id)
     {
@@ -153,48 +164,109 @@ class InvoiceController extends BaseController
         }
         // $to = Carbon::parse($request->to);
         if (is_null($request->store_id)) {
-            $invoice = Invoice::whereBetween('created_at', [$from, $to])->get();
-            return $this->sendMessage($invoice);
+            $invoice = Invoice::whereBetween('created_at', [$from, $to])->latest()->get();
+            return $this->sendMessage(InvoiceResource::collection($invoice));
+
         }
-        $invoice = Invoice::where('store_id', $request->store_id)->whereBetween('created_at', [$from, $to])->get();
-        return $this->sendMessage($invoice);
+        $invoice = Invoice::where('store_id', $request->store_id)->whereBetween('created_at', [$from, $to])->latest()->get();
+        return $this->sendMessage(InvoiceResource::collection($invoice));
     }
     public function filterByCode(Request $request)
     {
         $r = $request->validate([
             'code' => 'required',
-            'store_id' => 'integer',
+            'store_id' => 'integer|nullable',
         ]);
         if (is_null($request->store_id)) {
-            $invoice = Invoice::where(["code", $request->code])->get();
-            return $this->sendMessage($invoice);
+            $invoice = Invoice::where("code", $request->code)->latest()->get();
+            return $this->sendMessage(InvoiceResource::collection($invoice));
         }
-        $invoice = Invoice::where([['store_id', $request->store_id], ["code", $request->code]])->get();
-      if (is_null($invoice)) {
-          return $this->sendMessage(null, ['The invoice is not found'], false, 404);
+        $invoice = Invoice::where('store_id', $request->store_id)->where("code", $request->code)->latest()->get();
+        if (is_null($invoice)) {
+            return $this->sendMessage(null, ['The invoice is not found'], false, 404);
 
-      }
+        }
         return $this->sendMessage(InvoiceResource::collection($invoice));
 
     }
     public function filterToday(Request $request)
     {
         $r = $request->validate([
+            'store_id' => 'integer|nullable',
+        ]);
+        if (is_null($request->store_id)) {
+            $invoice = Invoice::whereDate('created_at', Carbon::today())->latest()->get();
+        } else {
+            $invoice = Invoice::where('store_id', $request->store_id)
+                ->whereDate('created_at', Carbon::today())->latest()->get();
+        }
+
+        return $this->sendMessage(InvoiceResource::collection($invoice));
+    }
+    public function filterThisWeek(Request $request)
+    {
+        $r = $request->validate([
+            'store_id' => 'integer | nullable',
+        ]);
+        if (!is_null($request->store_id)) {
+            $invoice = Invoice::where('store_id', $request->store_id)
+                ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->latest()->get();
+            return $this->sendMessage(InvoiceResource::collection($invoice));
+        }
+        $invoice = Invoice::whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->latest()->get();
+
+        return $this->sendMessage(InvoiceResource::collection($invoice));
+    }
+    public function filterThisMonth(Request $request)
+    {
+        $r = $request->validate([
             'store_id' => 'integer',
         ]);
-        $now = Carbon::now();
-        $invoice = Invoice::whereBetween('created_at', $now)->get();
+        if (is_null($request->store_id)) {
+            $invoice = Invoice::whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->latest()->get();
+        } else {
+            $invoice = Invoice::where('store_id', $request->store_id)
+                ->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->latest()->get();
+        }
+        return $this->sendMessage(InvoiceResource::collection($invoice));
+    }
+    public function filterThisYear(Request $request)
+    {
+        $r = $request->validate([
+            'store_id' => 'integer|nullable',
+        ]);
+        if (is_null($request->store_id)) {
+            $invoice = Invoice::whereBetween('created_at', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])->latest()->get();
+
+        } else {
+            $invoice = Invoice::where('store_id', $request->store_id)
+                ->whereBetween('created_at', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])->latest()->get();
+        }
+
         return $this->sendMessage(InvoiceResource::collection($invoice));
     }
     public function chartData($id)
     {
-
-        $start = new Carbon("first day of this month");
-        $end = Carbon::now();
-        $invoices = Invoice::where('store_id', $id)->whereBetween('created_at', [$start, $end])->get()->groupBy(function ($d) {
-            return Carbon::parse($d->created_at)->format('d');
+        $invoices = Invoice::where('store_id', $id)->whereBetween('created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->latest()->get()->groupBy(function ($d) {
+            return Carbon::parse($d->created_at)->format('D-d');
         });
         return $this->sendMessage($invoices);
+    }
+    public function debt(Request $request)
+    {
+        if (is_null($request->store_id)) {
+            $invoice = Invoice::whereHas('paymentModes', function ($query) {
+                $query->where('type', 'debt');
+            })->get();
+
+        } else {
+            $invoice = Invoice::where('store_id', $request->store_id)
+                ->whereHas('paymentModes', function ($query) {
+                    $query->where('type', 'debt');
+                })->get();
+        }
+
+        return $this->sendMessage(InvoiceResource::collection($invoice));
 
     }
 }
