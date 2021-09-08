@@ -23,13 +23,17 @@ class StoreController extends BaseController
         $store = Store::create(array_merge($request->except("supervisor_id"), $d));
         $date = date('dS F Y', strtotime($store->updated_at));
         $supervisor = User::find($supervisor_id);
+        $name = $user->name;
+        $storeName = $store->name;
+        $supName = $supervisor?->name;
+        $short_code = $store->short_code;
         $invoiceData = [
-            'greetings' => "Hi {$user->name}",
+            'greetings' => "Hi {$name}",
             "tablehead" => ["store Name", "Supervisor", "short code"],
-            "tablebody" => [$store->name, $supervisor?->name, $store->short_code],
+            "tablebody" => [$storeName, $supName, $short_code],
             'type' => 'store Created',
             'body' => 'A store has been created successfully.',
-            'line1' => "A store named {$store->name} has been successfully created by {$user->name}, on {$date} See details below:",
+            'line1' => "A store named {$supName} has been successfully created by {$name}, on {$date} See details below:",
         ];
         try {
             $this->updateNotification($invoiceData);
