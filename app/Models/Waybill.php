@@ -40,6 +40,6 @@ class Waybill extends Model
      */
     public function waybillHistory()
     {
-        return $this->hasMany(waybillHistory::class);
+        return $this->hasMany(WaybillHistory::class);
     }
 }
