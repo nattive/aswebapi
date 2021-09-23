@@ -48,6 +48,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::prefix('request')->group(function () {
             Route::get('{warehouse_id}', 'TransferController@getWarehouse');
             Route::post('/accept', 'TransferController@accept');
+            Route::post('/deny', 'TransferController@deny');
         });
         Route::get('{id}', 'WarehouseController@show');
     });
@@ -55,6 +56,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', 'StoreController@index');
         Route::post('/', 'StoreController@store');
         Route::put('{id}', 'StoreController@edit');
+        Route::get('{id}', 'StoreController@show');
         Route::get('{id}', 'StoreController@show');
         Route::delete('{id}', 'StoreController@destroy');
     });
@@ -109,11 +111,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/multiple', 'ProductController@uploadProducts');
         Route::prefix('request')->group(function () {
             Route::post('/', 'TransferController@store');
+            Route::get('store/{id}', 'TransferController@storeTransfer');
         });
     });
     Route::prefix('report')->group(function () {
         Route::get('/stores', 'ReportController@storesReport');
         Route::get('/stores/chart', 'ReportController@storeChat');
-
     });
 });

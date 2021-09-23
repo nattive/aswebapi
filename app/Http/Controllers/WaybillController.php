@@ -92,7 +92,7 @@ class WaybillController extends BaseController
             return $this->sendMessage(["Warehouse doesn't exist"], false, 404);
         }
 
-        $code = $warehouse->short_code . '/WB//' . Carbon::now()->format('M') . '/' . $wbNt;
+        $code = $warehouse->short_code . ' /WB/' . Carbon::now()->format('M') . '/' . $wbNt;
         $waybill = Waybill::create([
             'code' => $code,
             'from' => $request->from,

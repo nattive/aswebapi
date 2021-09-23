@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class WayBillHistory extends Model
 {
-     protected $guarded = ['id'];
     use HasFactory;
+    protected $guarded = ['id'];
 
     /**
      * Get the product that owns the WayBillHistory

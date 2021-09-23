@@ -220,4 +220,22 @@ class TransferController extends BaseController
                 break;
         }
     }
+    public function deny(Request $request)
+    {
+        $rq = $request->validate([
+            'transfer_id' => 'required|exists:transfers,id',
+        ]);
+        $transfer = Transfer::where('id', $request->transfer_id)->first();
+        $transfer->delete();
+        return $this->sendMessage("Deleted");
+
+    }
+    public function storeTransfer($id)
+    {
+        $transfer = Transfer::where('to', $id)
+            ->where('transfer_type', 'WAREHOUSE_TO_STORE')
+            ->with('transferProducts.product')->get();
+        return $this->sendMessage(TransferResource::collection($transfer));
+
+    }
 }

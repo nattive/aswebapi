@@ -16,7 +16,7 @@ class TransferProductResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'created_at' =>  Carbon::parse($this->created_at)->diffForHumans(),
+            'created_at' =>  Carbon::parse($this->created_at)->format('d/M/y'),
             'id' => $this->id,
             'product_id' => $this->product_id,
             'qty' => $this->qty,

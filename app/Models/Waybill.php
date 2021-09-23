@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Waybill extends Model
 {
     use HasFactory;
-     protected $guarded = ['id'];
+    protected $guarded = ['id'];
 
     /**
      * Get the warehouse that owns the Waybill
@@ -31,7 +31,7 @@ class Waybill extends Model
     }
     public function getCreatedAtAttribute($value)
     {
-        return  Carbon::parse($value)->format('d/m/Y');
+        return Carbon::parse($value)->format('d/m/Y');
     }
     /**
      * Get the waybillHistory associated with the Waybill
@@ -40,6 +40,6 @@ class Waybill extends Model
      */
     public function waybillHistory()
     {
-        return $this->hasMany(WaybillHistory::class);
+        return $this->hasMany(WayBillHistory::class);
     }
 }

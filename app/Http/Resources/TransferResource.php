@@ -45,7 +45,7 @@ class TransferResource extends JsonResource
             'to' => $to,
             'from' => $from,
             'products' => $this->transferProducts()->with('product')->get(),
-            'created_at' => Carbon::parse($this->created_at)->diffForHumans(),
+            'created_at' => Carbon::parse($this->created_at)->toDateTimeString(),
         ];
     }
 }

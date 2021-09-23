@@ -34,10 +34,18 @@ trait Helpers
                     Mail::to($user->email)
                         ->send(new InvoiceMail($notifyArray));
                 }
+                $user->userNotification()->create([
+                    'subject' => "Invoice Created",
+                    'body' => "An invoice has just been generated",
+                ]);
                 break;
             default:
                 foreach ($toNotify as $user) {
                     $array = array_merge(['greetings' => "Hi {$user->name}"], $notification);
+                    $user->userNotification()->create([
+                            'subject' => "Check your mail for more info",
+                            'body' => json_encode([$notification['tablehead'], $notification['tablebody']])
+                        ]);
                     $user->notify(new GeneralNotification($array));
                 }
                 break;
