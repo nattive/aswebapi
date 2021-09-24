@@ -13,19 +13,25 @@ class RoleController extends BaseController
     }
     public function assign(Request $request)
     {
-        $d = $request -> validate([
+        $d = $request->validate([
             'user_id' => 'required|integer',
-             'role' => 'in:ATTENDANT,MANAGER,SUPERVISOR,DIRECTOR',
-             "store_id" => 'required_if:role,MANAGER'
+            'role' => 'in:ATTENDANT,MANAGER,SUPERVISOR,DIRECTOR',
+            // "store_id" => 'required_if:role,MANAGER',
         ]);
-        if ($request->role == 'MANAGER') {
-            $store = Store::find($request->store_id);
-            if (!is_null($store)) {
-                $store -> update([ 'supervisor_id' => $request -> user_id ]);
-            }
-        }
         $user = User::findOrFail($request->user_id);
-        $user->update(['role' => $request->role]);
-        return $this->sendMessage('User access granted');
+
+        if ($request->role == 'MANAGER') {
+            $store = Store::find($user->store_id);
+            if (!is_null($store)) {
+                $store->update(['supervisor_id' => $request->user_id]);
+            }
+            return $this->sendMessage('User access granted');
+
+        } else {
+            $user->update(['role' => $request->role]);
+            return $this->sendMessage('User access granted');
+
+        }
+
     }
 }

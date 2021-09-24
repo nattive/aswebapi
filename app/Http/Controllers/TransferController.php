@@ -63,6 +63,54 @@ class TransferController extends BaseController
         $transfer = Transfer::where('id', $request->transfer_id)->first();
         switch ($transfer->transfer_type) {
             case 'STORE_TO_STORE':
+                   /**
+                 * Get all models
+                 */
+                $from = Store::where('id', $request->from_id)->first();
+                $to = Store::where('id', $transfer->to)->first();
+                /**
+                 * Loop through the request and check if its available in-stock
+                 */
+                $requestedPcsNA = []; //Array of products not available
+                foreach ($transfer->transferProducts as $product) {
+                    $from_store_stock = $from->storeStocks()->where('product_id', $product->product_id)->first();
+                    if (is_null($from_store_stock) || $product->qty > $from_store_stock->qty_in_stock) {
+                        /**
+                         *  Get the reason why transfer failed
+                         */
+                        if (is_null($from_store_stock)) {
+                            $reason = 'This product is not in the store';
+                        } elseif ($product->qty > $from_store_stock->qty_in_stock) {
+                            $reason = "The quantity requested ({$product->qty}) is more than the quality in the store ({$from_store_stock->qty_in_stock}).";
+                        } else {
+                            $reason = 'The product is not available';
+                        }
+                        /**
+                         * Pushed failed product abd reason into an array
+                         */
+                        array_push($requestedPcsNA, ['name' => Product::find($product->product_id)->name, 'reason' => $reason]);
+                    } else {
+                        $from_store_stock->update([
+                            'qty_in_stock' => $from_store_stock->qty_in_stock - $product->qty,
+                        ]);
+                        $to_store_stock = $to->storeStocks()->where('product_id', $product->id)->first();
+                        if (!is_null($to_store_stock)) {
+                            $to_store_stock->update([
+                                'qty_in_stock' => $to_store_stock->qty_in_stock + $product->qty,
+                            ]);
+                        } else {
+                            StoreStock::create([
+                                'product_id' => $product->product_id,
+                                'store_id' => $to->id,
+                                'qty_in_stock' => $product->qty,
+                            ]);
+                        }
+
+                    }
+                }
+                $transfer->update(['approved_by_id' => auth()->user()->id]);
+                return $this->sendMessage(['status_message' => 'Product transfer request accepted', 'unmoved' => $requestedPcsNA]);
+
                 break;
             case 'STORE_TO_WAREHOUSE':
                 /**
@@ -81,9 +129,9 @@ class TransferController extends BaseController
                          *  Get the reason why transfer failed
                          */
                         if (is_null($ssp)) {
-                            $reason = 'This product is not in the warehouse';
+                            $reason = 'This product is not in the store';
                         } elseif ($product->qty > $ssp->qty_in_stock) {
-                            $reason = "The quantity requested ({$product->qty}) is more than the quality in the warehouse ({$ssp->qty_in_stock}).";
+                            $reason = "The quantity requested ({$product->qty}) is more than the quality in the store ({$ssp->qty_in_stock}).";
                         } else {
                             $reason = 'The product is not available';
                         }
@@ -236,6 +284,13 @@ class TransferController extends BaseController
             ->where('transfer_type', 'WAREHOUSE_TO_STORE')
             ->with('transferProducts.product')->get();
         return $this->sendMessage(TransferResource::collection($transfer));
-
+    }
+    public function getRequest($type, $id)
+    {
+        $transfer = Transfer::where('to', $id)
+            ->where('transfer_type', $type)
+            ->where('approved_by_id', null)
+            ->with('transferProducts.product')->get();
+        return $this->sendMessage(TransferResource::collection($transfer));
     }
 }

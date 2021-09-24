@@ -112,10 +112,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::prefix('request')->group(function () {
             Route::post('/', 'TransferController@store');
             Route::get('store/{id}', 'TransferController@storeTransfer');
+            Route::get('get/{type}/{id}', 'TransferController@getRequest');
+            Route::post('/accept', 'TransferController@accept');
+            Route::post('/deny', 'TransferController@deny');
+
         });
     });
     Route::prefix('report')->group(function () {
         Route::get('/stores', 'ReportController@storesReport');
         Route::get('/stores/chart', 'ReportController@storeChat');
+    });
+    Route::prefix('notification')->group(function () {
+        Route::get('/', 'UserNotificationController@index');
     });
 });
