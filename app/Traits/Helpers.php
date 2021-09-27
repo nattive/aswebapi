@@ -27,25 +27,25 @@ trait Helpers
             case 'Invoice Created':
                 $other = [
                     'topic' => "Invoice Created",
-                    'body' => "An invoice has just been generated",
+                    'body' => json_encode([$notification['tablehead'], $notification['tablebody']]),
                 ];
                 $notifyArray = array_merge($other, $notification);
                 foreach ($toNotify as $user) {
                     Mail::to($user->email)
                         ->send(new InvoiceMail($notifyArray));
+                    $user->userNotification()->create([
+                        'subject' => "Invoice Created",
+                        'body' => json_encode([$notification['tablehead'], $notification['tablebody']]),
+                    ]);
                 }
-                $user->userNotification()->create([
-                    'subject' => "Invoice Created",
-                    'body' => "An invoice has just been generated",
-                ]);
                 break;
             default:
                 foreach ($toNotify as $user) {
                     $array = array_merge(['greetings' => "Hi {$user->name}"], $notification);
                     $user->userNotification()->create([
-                            'subject' => $notification['type'],
-                            'body' => json_encode([$notification['tablehead'], $notification['tablebody']])
-                        ]);
+                        'subject' => $notification['type'],
+                        'body' => json_encode([$notification['tablehead'], $notification['tablebody']]),
+                    ]);
                     $user->notify(new GeneralNotification($array));
                 }
                 break;

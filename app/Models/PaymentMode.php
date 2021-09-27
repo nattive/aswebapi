@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,5 +19,10 @@ class PaymentMode extends Model
     public function invoices()
     {
         return $this->belongsToMany(Invoice::class, 'invoice_payment_mode', 'invoice_id', 'payment_mode_id');
+    }
+
+    public function getDueDateAttribute($value)
+    {
+        return Carbon::parse($value)->format('d/m/Y');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\InvoiceResource;
 use App\Models\Invoice;
 use App\Models\Store;
 use Carbon\Carbon;
@@ -21,8 +22,10 @@ class ReportController extends BaseController
                 $top = ['store' => $store, 'count' => count($store->invoices)];
             }
             foreach ($store->storeStocks as $ss) {
-                $tt = $ss->qty_in_stock * $ss->product()->first()->price;
-                $stockWorth += $tt;
+                $tt = $ss->qty_in_stock * $ss->product()->first()?->price;
+                if ($tt) {
+                    $stockWorth += $tt;
+                }
             }
             $totalDebt = 0;
             $totalDebtDay = 0;
@@ -70,9 +73,9 @@ class ReportController extends BaseController
             ->get()->groupBy(function ($d) {
             return Carbon::parse($d->created_at)->format('D-d');
         });
-        $dueDate = Invoice::whereHas("paymentModes", function ($query) {
+        $dueDate = InvoiceResource::collection((Invoice::whereHas("paymentModes", function ($query) {
             $query->where("type", "debt")->whereDate("due_date", "<", Carbon::now());
-        });
+        })->with('invoiceItems', 'paymentModes')->get()));
         return $this->sendMessage(compact("invoices", "dueDate"));
 
     }

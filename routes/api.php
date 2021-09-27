@@ -104,6 +104,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('products')->group(function () {
         Route::get('/', 'ProductController@index');
         Route::get('{id}', 'ProductController@show');
+        Route::delete('{id}', 'ProductController@destroy');
         Route::put('/', 'ProductController@edit');
         Route::get('/store/{store_id}', 'ProductController@showStoreProducts');
         Route::get('/warehouse/stock', 'ProductController@warehouseStock');
@@ -124,5 +125,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('notification')->group(function () {
         Route::get('/', 'UserNotificationController@index');
+        Route::get('/read/{id}', 'UserNotificationController@read');
+        Route::get('/show/{id}', 'UserNotificationController@show');
     });
 });

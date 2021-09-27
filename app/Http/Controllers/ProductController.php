@@ -162,6 +162,11 @@ class ProductController extends BaseController
         $product = Product::where('id', $id)->with(["warehouseStock", "waybill", 'storeStocks', "transferProducts.transfer"])->first();
         return $this->sendMessage(new ProductResource($product));
     }
+    public function destroy($id)
+    {
+        Product::find($id)->delete();
+        return $this->sendMessage("Product Deleted");
+    }
     // public function warehouseStock($id)
     // {
     //     $warehouse = Warehouse::where('id', $id)->with(['warehouseStocks', 'waybills'])->get();

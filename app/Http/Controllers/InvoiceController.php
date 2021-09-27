@@ -42,7 +42,7 @@ class InvoiceController extends BaseController
 
         }
         $invoicesCount = count(Invoice::all()) + 1;
-        $code = $store->short_code . '/INV//' . Carbon::now()->format('m') . '0' . $invoicesCount;
+        $code = $store->short_code . ' /INV/' . Carbon::now()->format('m') . '0' . $invoicesCount;
         $invoice = $customer->invoices()->create([
             'code' => $code,
             'generated_by_user_id' => auth('sanctum')->user()->id,
@@ -76,15 +76,17 @@ class InvoiceController extends BaseController
             'invoice' => new InvoiceResource($invoice),
             'store' => $store,
             'invoiceItems' => $invoice->invoiceItems()->with('product')->latest()->get(),
+            "tablehead" => ["Customer Name", "Invoice Code", "Amount", "Store"],
+            "tablebody" => [$request->customerName, $request->totalAmount, $store->name],
         ];
         foreach ($request->paymentInformation as $paymentInfo) {
             $invoice->paymentModes()->create([
                 'amount' => $paymentInfo['amount'],
                 'type' => $paymentInfo['type'],
-                'due_date' => Arr::exists($paymentInfo, 'due_date') ?? $paymentInfo['due_date'],
+                'due_date' => Arr::exists($paymentInfo, 'due_date') ? $paymentInfo['due_date'] : null,
             ]);
         }
-$this->updateNotification($invoiceData);
+        $this->updateNotification($invoiceData);
 
         return $this->sendMessage(new InvoiceResource($invoice));
     }
