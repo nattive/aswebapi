@@ -100,12 +100,14 @@ class ProductController extends BaseController
             'id' => 'integer|required',
             'name' => 'required|string',
             'price' => 'required|integer',
+            'pcs_per_ctn' => 'nullable|integer',
         ]);
         $product = Product::find($request->id);
         $product->update(
             array_merge(['last_edit_by_id' => $user->id], $request->only([
                 'name',
                 'price',
+                'pcs_per_ctn',
             ]))
         );
 

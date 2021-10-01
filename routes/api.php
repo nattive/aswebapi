@@ -26,7 +26,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('user/{id}')->group(function () {
         Route::post('update', 'UserController@update');
         Route::get('deactivate', 'UserController@deactivate');
-        Route::post('activate', 'UserController@activate');
+        Route::get('activate', 'UserController@activate');
         Route::post('/change-password', 'UserAuthController@changePassword');
     });
     Route::prefix('users')->group(function () {
@@ -62,6 +62,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('customer')->group(function () {
         Route::get('/', 'CustomerController@index');
+        Route::get('/invoice/{id}', 'CustomerController@customerInvoices');
         Route::post('/', 'CustomerController@store');
     });
     Route::prefix('discount')->group(function () {

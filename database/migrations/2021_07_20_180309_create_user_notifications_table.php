@@ -18,6 +18,8 @@ class CreateUserNotificationsTable extends Migration
             $table->integer('user_id');
             $table->string('subject');
             $table->text('body');
+            $table->text('table_head')->nullable();
+            $table->text('table_body')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamps();
         });

@@ -35,7 +35,9 @@ trait Helpers
                         ->send(new InvoiceMail($notifyArray));
                     $user->userNotification()->create([
                         'subject' => "Invoice Created",
-                        'body' => json_encode([$notification['tablehead'], $notification['tablebody']]),
+                        'table_head' => json_encode($notification['tablehead']),
+                        'table_body' =>  json_encode($notification['tablebody']),
+                        'body' => "An invoice, with code " .$notification["code"]. " was created",
                     ]);
                 }
                 break;
@@ -44,7 +46,9 @@ trait Helpers
                     $array = array_merge(['greetings' => "Hi {$user->name}"], $notification);
                     $user->userNotification()->create([
                         'subject' => $notification['type'],
-                        'body' => json_encode([$notification['tablehead'], $notification['tablebody']]),
+                        'table_head' => json_encode($notification['tablehead']),
+                        'table_body' =>  json_encode($notification['tablebody']),
+                        'body' => $notification['body']. '. See more details',
                     ]);
                     $user->notify(new GeneralNotification($array));
                 }

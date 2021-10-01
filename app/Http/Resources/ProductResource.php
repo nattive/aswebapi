@@ -30,6 +30,7 @@ class ProductResource extends JsonResource
             'last_edit_by_id' => $this->last_edit_by_id,
             'name' => $this->name,
             'price' => $this->price,
+            'pcs_per_ctn' => $this->pcs_per_ctn,
             'storeStocks' => $this->storeStocks()->with('store')->get(),
             'warehouseStock' => $this->warehouseStock()->with('warehouse')->get(),
             'transferProducts' => TransferProductResource::collection($this->transferProducts),

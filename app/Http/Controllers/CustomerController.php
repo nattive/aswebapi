@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\InvoiceResource;
 use App\Models\Customer;
+use App\Models\Invoice;
 use Illuminate\Http\Request;
 
 class CustomerController extends BaseController
@@ -21,5 +23,11 @@ class CustomerController extends BaseController
         ]);
         Customer::create($data);
         return $this->sendMessage('Customer created successfully');
+    }
+    public function customerInvoices($id)
+    {
+        $invoices = Invoice::where('customer_id', $id)
+        ->with(['invoiceItems', 'paymentModes', 'customer', 'store'])->get();
+         return $this->sendMessage(InvoiceResource::collection($invoices));
     }
 }

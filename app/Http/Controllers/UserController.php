@@ -86,10 +86,10 @@ class UserController extends BaseController
     public function activate( $user)
     {
         $user = User::find($user);
-        $user->update([
-            'active' => true,
-        ]);
-        return $this->sendMessage("User  updated");
+        $user->active = 1 ;
+        $user->save() ;
+
+        return $this->sendMessage( $user);
 
     }
 }

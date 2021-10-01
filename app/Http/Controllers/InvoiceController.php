@@ -26,10 +26,10 @@ class InvoiceController extends BaseController
     {
         $customer = '';
         $store = Store::find($request->store_id);
-        if ($request->customerId) {
+        if (!is_null($request->customerId)) {
             $customer = Customer::find($request->customerId);
         } else {
-            $customer = Customer::where('phonenumer', $request->customerPhone)->orWhere('email', $request->customerEmail)->first();
+            $customer = Customer::where('phonenumer', $request->customerPhone)->first();
             if (is_null($customer)) {
                 $customer = Customer::create([
                     'phonenumer' => $request->customerPhone,
@@ -41,6 +41,7 @@ class InvoiceController extends BaseController
             }
 
         }
+        // return  $customer;
         $invoicesCount = count(Invoice::all()) + 1;
         $code = $store->short_code . ' /INV/' . Carbon::now()->format('m') . '0' . $invoicesCount;
         $invoice = $customer->invoices()->create([

@@ -33,13 +33,13 @@ class UserAuthController extends BaseController
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'phonenumber' => "required|unique:users",
+            'phonenumber' => "required|unique:users|min:11",
             'store_id' => 'integer|nullable|required_if:role,ATTENDANT',
             'address' => 'nullable',
             'role' => 'in:ATTENDANT,MANAGER,SUPERVISOR,DIRECTOR',
             'name' => 'required',
             'email' => 'required|email||unique:users',
-            'password' => 'required',
+            'password' => 'required|min:6',
             'confirm_password' => 'required|same:password',
         ]);
 

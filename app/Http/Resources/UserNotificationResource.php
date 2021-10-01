@@ -19,7 +19,9 @@ class UserNotificationResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'subject' => $this->subject,
-            'body' => json_decode($this->body),
+            'body' => $this->body,
+            'table_head' => json_decode($this->table_head),
+            'table_body' => json_decode($this->table_body),
             'is_read' => $this->is_read,
             'date' => Carbon::parse($this->created_at)->toDateString(),
         ];
