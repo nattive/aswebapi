@@ -73,6 +73,7 @@ class InvoiceController extends BaseController
         }
 
         $invoiceData = [
+            'code' => $code,
             'type' => 'Invoice Created',
             'invoice' => new InvoiceResource($invoice),
             'store' => $store,
