@@ -79,7 +79,7 @@ class InvoiceController extends BaseController
             'store' => $store,
             'invoiceItems' => $invoice->invoiceItems()->with('product')->latest()->get(),
             "tablehead" => ["Customer Name", "Invoice Code", "Amount", "Store"],
-            "tablebody" => [$request->customerName, $request->totalAmount, $store->name],
+            "tablebody" => [[$request->customerName, $code,  $request->totalAmount, $store->name]],
         ];
         foreach ($request->paymentInformation as $paymentInfo) {
             $invoice->paymentModes()->create([
@@ -115,6 +115,18 @@ class InvoiceController extends BaseController
             "reversed_status" => "Pending",
             "reason" => $request->reason,
         ]);
+        $notification = [
+            'type' => 'Invoice Retract Request',
+            'body' => "An attendant has requested for an Invoice to be Retracted. Reason: {$request->reason}",
+            "tablehead" => ["Customer Name", "Invoice Code", "Amount", "Store"],
+            "tablebody" => [[$invoice->customer->name, $invoice->code, $invoice->total_amount, $invoice->store?->name]],
+        ];
+        try {
+            $this->updateNotification($notification);
+        } catch (\Throwable$th) {
+            return $this->sendMessage("Invoice reversed request sent, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
+        }
+
         return $this->sendMessage("Invoice reversed request sent");
     }
 
@@ -148,6 +160,17 @@ class InvoiceController extends BaseController
                 "reversed_status" => "successful",
                 "reversed" => true,
             ]);
+            $notification = [
+                'type' => 'Invoice Retracted',
+                'body' => "An invoice has been retracted",
+                "tablehead" => ["Customer Name", "Invoice Code", "Amount", "Store"],
+                "tablebody" => [[$invoice->customer->name, $invoice->code, $invoice->total_amount, $invoice->store?->name]],
+            ];
+            try {
+                $this->updateNotification($notification);
+            } catch (\Throwable$th) {
+                return $this->sendMessage("Invoice reversed, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
+            }
 
             return $this->sendMessage("Invoice reversed");
         }

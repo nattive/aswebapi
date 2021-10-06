@@ -11,13 +11,18 @@ use App\Notifications\GeneralNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 
-/**
- * All tutor helper methods
- * @param array $notification
- * $type = Invoice Created |
- */
 trait Helpers
 {
+    /**
+     * notification methods
+     * @param array $notification [
+     * $type = Invoice Created
+     * $body = [][]
+     * table_head= []
+     * table_body= []
+     * ]
+     */
+
     public function updateNotification(array $notification)
     {
         $toNotify = User::where('role', 'SUPERVISOR')->where('role', 'DIRECTOR')
@@ -31,13 +36,13 @@ trait Helpers
                 ];
                 $notifyArray = array_merge($other, $notification);
                 foreach ($toNotify as $user) {
-                    Mail::to($user->email)
-                        ->send(new InvoiceMail($notifyArray));
+                    // Mail::to($user->email)
+                    //     ->send(new InvoiceMail($notifyArray));
                     $user->userNotification()->create([
                         'subject' => "Invoice Created",
                         'table_head' => json_encode($notification['tablehead']),
-                        'table_body' =>  json_encode($notification['tablebody']),
-                        'body' => "An invoice, with code " .$notification["code"]. " was created",
+                        'table_body' => json_encode($notification['tablebody']),
+                        'body' => "An invoice, with code " . $notification["code"] . " was created",
                     ]);
                 }
                 break;
@@ -47,10 +52,10 @@ trait Helpers
                     $user->userNotification()->create([
                         'subject' => $notification['type'],
                         'table_head' => json_encode($notification['tablehead']),
-                        'table_body' =>  json_encode($notification['tablebody']),
-                        'body' => $notification['body']. '. See more details',
+                        'table_body' => json_encode($notification['tablebody']),
+                        'body' => $notification['body'] . '. See more details',
                     ]);
-                    $user->notify(new GeneralNotification($array));
+                    // $user->notify(new GeneralNotification($array));
                 }
                 break;
         }

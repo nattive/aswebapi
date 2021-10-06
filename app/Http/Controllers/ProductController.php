@@ -36,6 +36,7 @@ class ProductController extends BaseController
             return $this->sendMessage(['Create a waybill first'], false, 404);
         }
         $products = json_decode($request->products);
+        $createdProducts = [];
         /**
          * Create the product
          */
@@ -73,17 +74,17 @@ class ProductController extends BaseController
                 ]);
             }
             $pArray = [$product->name, $product->qty, $product->amount];
-            array_push($pArray);
+            array_push($createdProducts, $pArray);
         }
         $date = date('dS F Y', strtotime($waybill->created_at));
         $c = count($products);
         $warehouse = $waybill->warehouse()->first();
         $notification = [
             'type' => 'Product Upload',
+            'subject' => 'Products has been Upload',
             "tablehead" => ["Product Name", "Product Qty", "Product Amount"],
-            "tablebody" => $pArray,
-            'body' => "products has been uploaded into {$warehouse->name}",
-            'line1' => "A total of {$c} Product(s) have been uploaded. These products with waybill {$waybill->code} are attached to warehouse {$warehouse->name} has been successfully uploaded by {$user->name}, on {$date} See details below:",
+            "tablebody" => $createdProducts,
+            'body' => "A total of {$c} Product(s) have been uploaded. These products with waybill {$waybill->code} are attached to warehouse {$warehouse->name} has been successfully uploaded by {$user->name}, on {$date} See details below:",
         ];
         try {
             $this->updateNotification($notification);
@@ -150,6 +151,19 @@ class ProductController extends BaseController
                 'qty_in_stock' => $warehouseStore + $request->qty,
             ]);
         }
+        $notification = [
+            'type' => 'Product Upload',
+            'subject' => 'Products has been Upload',
+            "tablehead" => ["Product Name", "Product Qty", "Product Amount"],
+            "tablebody" => [[$newProduct->name, 1, $newProduct->price]],
+            'body' => "A  Product have been uploaded. These products with waybill {$waybill->code} are attached to warehouse {$warehouseStore->warehouse?->name} has been successfully.",
+        ];
+        try {
+            $this->updateNotification($notification);
+        } catch (\Throwable$th) {
+            return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
+        }
+
         return $this->sendMessage('Products uploaded successfully');
 
     }
@@ -166,7 +180,18 @@ class ProductController extends BaseController
     }
     public function destroy($id)
     {
-        Product::find($id)->delete();
+        $product = Product::find($id);
+        $product->delete();
+        $notification = [
+            'type' => 'Product Deleted',
+            'subject' => 'Products has just been Deleted',
+            'body' => "{$product->name} Has been deleted",
+        ];
+        try {
+            $this->updateNotification($notification);
+        } catch (\Throwable$th) {
+            return $this->sendMessage("Products Deleted successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
+        }
         return $this->sendMessage("Product Deleted");
     }
     // public function warehouseStock($id)
