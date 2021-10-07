@@ -32,7 +32,7 @@ class InvoiceResource extends JsonResource
             "invoice_items" => $this->invoiceItems()->with("product")->get(),
             "paymentModes" => $this->paymentModes,
             "discount" => $this->discount_id ? Discount::find($this->discount_id) : null,
-            "created_at" => Carbon::parse($this->create_at)->format('d/M/y')
+            "created_at" => Carbon::parse($this->created_at)->toDateTimeString()
         ];
     }
 }
