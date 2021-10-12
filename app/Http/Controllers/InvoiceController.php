@@ -146,15 +146,16 @@ class InvoiceController extends BaseController
     public function acceptRetract($invoice_id)
     {
         $invoice = Invoice::find($invoice_id);
-        foreach ($invoice->invoiceItems as $invoiceItem) {
-            $ssp = StoreStock::where([["store_id", $invoice->store_id], ["product_id", $invoiceItem->product_id]])->first();
-            if (!is_null($ssp)) {
-                $ssp->update([
-                    "qty_in_stock" => $ssp->qty_in_stock + $invoiceItem->qty,
-                ]);
-            }
-        }
+        // return $invoice->invoiceItems;
         if (!is_null($invoice)) {
+            foreach ($invoice->invoiceItems as $invoiceItem) {
+                $ssp = StoreStock::where([["store_id", $invoice->store_id], ["product_id", $invoiceItem->product_id]])->first();
+                if (!is_null($ssp)) {
+                    $ssp->update([
+                        "qty_in_stock" => $ssp->qty_in_stock + number_format($invoiceItem->qty),
+                    ]);
+                }
+            }
             $invoice->update([
                 "reversed_approved_id" => auth("sanctum")->user()->id,
                 "reversed_status" => "successful",

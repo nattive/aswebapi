@@ -25,14 +25,14 @@ class InvoiceResource extends JsonResource
             "generated_by" => User::find($this->generated_by_user_id),
             "customer" => Customer::find($this->customer_id),
             "store_id" => $this->store_id,
-            "reversed_status" => $this->reversed_status,
+            "reversed_status" => $this->reversed_status === 'successful' ? 'Reversed' : $this->reversed_status,
             "reversed" => $this->reversed,
             "total_amount" => $this->total_amount,
             "discount_id" => $this->discount_id,
             "invoice_items" => $this->invoiceItems()->with("product")->get(),
             "paymentModes" => $this->paymentModes,
             "discount" => $this->discount_id ? Discount::find($this->discount_id) : null,
-            "created_at" => Carbon::parse($this->created_at)->toDateTimeString()
+            "created_at" => Carbon::parse($this->created_at)->toDateTimeString(),
         ];
     }
 }
