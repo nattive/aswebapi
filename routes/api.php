@@ -54,11 +54,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('store')->group(function () {
         Route::get('/', 'StoreController@index');
+        Route::get('deactivated', 'StoreController@deactivated');
         Route::post('/', 'StoreController@store');
         Route::put('{id}', 'StoreController@edit');
         Route::get('{id}', 'StoreController@show');
         Route::get('{id}', 'StoreController@show');
-        Route::delete('{id}', 'StoreController@destroy');
+        Route::get('{id}/deactivate', 'StoreController@deactivate');
+        Route::get('{id}/activate', 'StoreController@activate');
     });
     Route::prefix('customer')->group(function () {
         Route::get('/', 'CustomerController@index');

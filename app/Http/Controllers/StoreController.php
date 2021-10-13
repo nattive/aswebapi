@@ -13,7 +13,11 @@ class StoreController extends BaseController
     use Helpers;
     public function index()
     {
-        return $this->sendMessage(Store::with(['storeStocks.product'])->get());
+        return $this->sendMessage(Store::Where('active', 1)->with(['storeStocks.product'])->get());
+    }
+    public function deactivated()
+    {
+        return $this->sendMessage(Store::Where('active', 0)->with(['storeStocks.product'])->get());
     }
     public function store(StoreRequest $request)
     {
@@ -57,10 +61,24 @@ class StoreController extends BaseController
         $warehouse->update($request->all());
         return $this->sendMessage("Store updated successfully");
     }
-    public function destroy($id)
+
+    public function deactivate($Store)
     {
-        $warehouse = Store::findOrFail($id);
-        $warehouse->delete();
-        return $this->sendMessage("Store deleted successfully");
+        $user = Store::where('id', $Store)->first();
+
+        $user->active = 0 ;
+        $user->save() ;
+
+        return $this->sendMessage( $Store);
+
+    }
+    public function activate( $Store)
+    {
+        $user = Store::find($Store);
+        $user->active = 1 ;
+        $user->save() ;
+
+        return $this->sendMessage( $Store);
+
     }
 }
