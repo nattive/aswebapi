@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Warehouse;
+use App\Models\WarehouseStock;
 use App\Models\Waybill;
+use App\Models\WayBillHistory;
 use App\Traits\Helpers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -78,7 +80,6 @@ class WaybillController extends BaseController
 
                 break;
         }
-
     }
     public function store(Request $request)
     {
@@ -107,7 +108,7 @@ class WaybillController extends BaseController
         ];
         try {
             $this->updateNotification($notification);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             return $this->sendMessage($waybill, ["Waybill successfully, but mail notification error"]);
         }
         return $this->sendMessage($waybill);
@@ -138,6 +139,34 @@ class WaybillController extends BaseController
         ]);
         return $this->sendMessage('Product uploaded successfully');
     }
+    public function edit(Request $request)
+    {
+        $user = auth('sanctum')->user();
+        if ($user->role !== 'DIRECTOR') {
+            return $this->sendMessage(["Unauthorized"], false, 401);
+        }
+        $data = $request->validate([
+            'waybill_history_id' => 'required',
+            'waybill_id' => 'required',
+            'product_id' => 'required',
+            'qty' => 'required',
+        ]);
+        $waybill = Waybill::where('id', $request->waybill_id)->first();
+        $WayBillHistory = WayBillHistory::findOrFail($request->waybill_history_id);
+        $prevQty = $WayBillHistory->qty;
+        $stock = WarehouseStock::where('product_id', $request->product_id)->first();
+        $oldQtyStock = $stock->qty_in_stock - $prevQty;
+        $newQtyStock = $oldQtyStock + $request->qty;
+        // Update Models
+        $WayBillHistory -> update([
+            'qty' =>  $request->qty
+        ]);
+        $stock -> update([
+            'qty_in_stock' =>  $newQtyStock
+        ]);
+
+        return $this->sendMessage('Product updated successfully');
+    }
     public function chartData()
     {
 
@@ -147,6 +176,5 @@ class WaybillController extends BaseController
             return Carbon::parse($d->created_at)->format('m');
         });
         return $this->sendMessage($waybill);
-
     }
 }

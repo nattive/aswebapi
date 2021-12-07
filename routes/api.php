@@ -99,6 +99,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('waybill')->group(function () {
         Route::get('/', 'WaybillController@index');
         Route::post('/', 'WaybillController@store');
+        Route::put('/edit', 'WaybillController@edit');
         Route::post('/filter', 'WaybillController@filter');
         Route::post('/chartData', 'WaybillController@filter');
         Route::get('{id}', 'WaybillController@show');

@@ -20,7 +20,7 @@ class ProductController extends BaseController
     use Helpers;
     public function index()
     {
-        $products = Product::with(['warehouseStock.warehouse', 'waybill'])->get();
+        $products = Product::with(['warehouseStock.warehouse', 'waybills'])->get();
         $start = new Carbon("first day of this month");
         $end = Carbon::now();
         $today = Product::whereBetween('created_at', [$start, $end])->get();
@@ -52,7 +52,12 @@ class ProductController extends BaseController
             if ($singleProduct->fails()) {
                 return $this->sendMessage(null, $singleProduct->errors(), false, 500);
             }
-            $newProduct = $waybill->products()->firstOrCreate($p);
+
+            $newProduct = Product::where('name', $product->name)->first();
+
+            if (is_null($newProduct)) {
+                $newProduct = $waybill->products()->create($p);
+            }
             /**
              * Update stock
              */
@@ -61,6 +66,7 @@ class ProductController extends BaseController
                 'product_id' => $newProduct->id,
                 'qty' => $product->qty,
             ]);
+            $newProduct->waybills()->attach($waybill->id);
             $warehouseStore = WarehouseStock::where([['product_id', $newProduct->id], ['warehouse_id', request('warehouse_id')]])->first();
             if (is_null($warehouseStore)) {
                 WarehouseStock::create([
@@ -88,7 +94,7 @@ class ProductController extends BaseController
         ];
         try {
             $this->updateNotification($notification);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
         }
         return $this->sendMessage('Products uploaded successfully');
@@ -113,10 +119,10 @@ class ProductController extends BaseController
         );
 
         return $this->sendMessage('Product Updated');
-
     }
     public function store(Request $request)
     {
+        // return $newProduct;
         $data = $request->validate([
             'name' => 'string|required',
             'price' => 'required|integer',
@@ -124,6 +130,7 @@ class ProductController extends BaseController
             'waybill_id' => 'required|integer',
             'qty' => 'required|integer',
         ]);
+        // $newProduct = Product::where('name', $request->name)->first();
 
         $waybill = Waybill::find($request->waybill_id);
 
@@ -131,51 +138,60 @@ class ProductController extends BaseController
             return $this->sendMessage(['Create a waybill first'], false, 404);
         }
 
-        $newProduct = $waybill->products()
-            ->firstOrCreate($request->only([
-                'name',
-                'price',
-            ]));
+        $newProduct = Product::where('name', $request->name)->first();
+
+            if (is_null($newProduct)) {
+                $newProduct = Product::create($request->only([
+                    'name',
+                    'price',
+                ]));
+            }
+            $newProduct->waybills()->attach($waybill->id);
+
         /**
          * Update stock
          */
-        $warehouseStore = WarehouseStock::where([['product_id', $newProduct->id], ['warehouse_id', request('warehouse_id')]])->first();
+        $warehouseStore = WarehouseStock::where('product_id', $newProduct->id)
+        ->where('warehouse_id', request('warehouse_id'))->first();
         if (is_null($warehouseStore)) {
             WarehouseStock::create([
                 'product_id' => $newProduct->id,
-                'warehouse_id' => $waybill->warehouse_id,
+                'warehouse_id' => $request->warehouse_id,
                 'qty_in_stock' => $request->qty,
             ]);
         } else {
             $warehouseStore->update([
-                'qty_in_stock' => $warehouseStore + $request->qty,
+                'qty_in_stock' => $warehouseStore ->qty_in_stock + $request->qty,
             ]);
         }
+        WayBillHistory::create([
+            'waybill_id' => $waybill->id,
+            'product_id' => $newProduct->id,
+            'qty' => $request->qty,
+        ]);
         $notification = [
             'type' => 'Product Upload',
             'subject' => 'Products has been Upload',
             "tablehead" => ["Product Name", "Product Qty", "Product Amount"],
             "tablebody" => [[$newProduct->name, 1, $newProduct->price]],
-            'body' => "A  Product have been uploaded. These products with waybill {$waybill->code} are attached to warehouse {$warehouseStore->warehouse?->name} has been successfully.",
+            'body' => "A  Product have been uploaded. These products with waybill {$waybill->code} are attached to warehouse {$warehouseStore?->warehouse?->name} has been successfully.",
         ];
         try {
             $this->updateNotification($notification);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
         }
 
         return $this->sendMessage('Products uploaded successfully');
-
     }
     public function showStoreProducts($id)
     {
         $products = StoreStock::where('store_id', $id)->with('product')->get();
         return $this->sendMessage($products);
-
     }
     public function show($id)
     {
-        $product = Product::where('id', $id)->with(["warehouseStock", "waybill", 'storeStocks', "transferProducts.transfer"])->first();
+        $product = Product::where('id', $id)->with(["warehouseStock", "waybills", 'storeStocks', "transferProducts.transfer"])->first();
         return $this->sendMessage(new ProductResource($product));
     }
     public function destroy($id)
@@ -189,7 +205,7 @@ class ProductController extends BaseController
         ];
         try {
             $this->updateNotification($notification);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             return $this->sendMessage("Products Deleted successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
         }
         return $this->sendMessage("Product Deleted");

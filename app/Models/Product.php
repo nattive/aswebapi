@@ -19,9 +19,9 @@ class Product extends Model
     {
         return $this->hasMany(WarehouseStock::class);
     }
-    public function waybill()
+    public function waybills()
     {
-        return $this->belongsTo(Waybill::class);
+        return $this->belongsToMany(Waybill::class);
     }
     /**
      * Get all of the StoreStock for the Product

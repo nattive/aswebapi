@@ -35,7 +35,7 @@ class ProductResource extends JsonResource
             'warehouseStock' => $this->warehouseStock()->with('warehouse')->get(),
             'transferProducts' => TransferProductResource::collection($this->transferProducts),
             'updated_at' => Carbon::parse($this->created_at)->toDateTimeString(),
-            'waybill' => $this->waybill()->with(["warehouse", "waybillHistory" => function($query) use ($id) {
+            'waybill' => $this->waybills()->with(["warehouse", "waybillHistory" => function($query) use ($id) {
                 $query->where("product_id", $id);
             }])->get(),
             "sales" => $sales,
