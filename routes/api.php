@@ -16,7 +16,7 @@ Route::post('login', 'UserAuthController@login');
 Route::post('logout', 'UserAuthController@logout');
 Route::get('me', 'UserAuthController@me');
 
-Route::middleware(['auth:sanctum', 'supervisor'])->group(function () {
+Route::middleware(['auth:sanctum', 'Toplevel'])->group(function () {
     Route::post('register', 'UserAuthController@register');
 
 });

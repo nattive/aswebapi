@@ -5,6 +5,7 @@ namespace App\Http;
 use App\Http\Middleware\DirectorMiddleware;
 use App\Http\Middleware\ManagerMiddleware;
 use App\Http\Middleware\SupervisorMiddleware;
+use App\Http\Middleware\TopLevelMiddleware;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
@@ -70,5 +71,6 @@ class Kernel extends HttpKernel
         "director" => DirectorMiddleware::class,
         "manager" => ManagerMiddleware::class,
         "supervisor" => SupervisorMiddleware::class,
+        "Toplevel" => TopLevelMiddleware::class,
     ];
 }
