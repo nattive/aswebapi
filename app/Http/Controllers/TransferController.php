@@ -13,6 +13,7 @@ use App\Models\WarehouseStock;
 use App\Traits\Helpers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TransferController extends BaseController
 {
@@ -58,12 +59,11 @@ class TransferController extends BaseController
         ];
         try {
             $this->updateNotification($notification);
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             return $this->sendMessage("Request sent successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
         }
 
         return $this->sendMessage('Request sent');
-
     }
 
     public function getWarehouse($warehouse_id)
@@ -75,13 +75,15 @@ class TransferController extends BaseController
 
     public function accept(Request $request)
     {
+        // return $request->all();
         $request->validate([
             'from_id' => 'required|exists:warehouses,id',
             'transfer_id' => 'required|exists:transfers,id',
             'products' => 'required_if:isIndividual,true',
             'isIndividual' => 'nullable',
         ]);
-        $transfer = Transfer::where('id', $request->transfer_id)->first();
+        $transfer = Transfer::where('id', $request->transfer_id)->with('transferProducts.product')->first();
+
         switch ($transfer->transfer_type) {
             case 'STORE_TO_STORE':
                 /**
@@ -138,7 +140,6 @@ class TransferController extends BaseController
                                 'qty_in_stock' => $product->qty,
                             ]);
                         }
-
                     }
                 }
 
@@ -151,7 +152,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable$th) {
+                } catch (\Throwable $th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
 
@@ -175,7 +176,7 @@ class TransferController extends BaseController
                     $products_to_transfer = $transfer->transferProducts;
                 }
                 foreach ($products_to_transfer as $product) {
-                 $transfer->transferProducts()
+                    $transfer->transferProducts()
                         ->where('product_id', $product->product_id)
                         ->first()
                         ->update(['qty' => $product->qty]);
@@ -212,7 +213,6 @@ class TransferController extends BaseController
                                 'qty_in_stock' => $product->qty,
                             ]);
                         }
-
                     }
                 }
                 $transfer->update(['approved_by_id' => auth()->user()->id]);
@@ -224,7 +224,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable$th) {
+                } catch (\Throwable $th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
                 return $this->sendMessage(['status_message' => 'Product transfer request accepted', 'unmoved' => $requestedPcsNA]);
@@ -234,7 +234,7 @@ class TransferController extends BaseController
                 /**
                  * Get all models
                  */
-                $transfer = Transfer::where('id', $request->transfer_id)->first();
+                $transfer = Transfer::where('id', $request->transfer_id)->with('transferProducts')->first();
                 $warehouse = Warehouse::where('id', $request->from_id)->first();
                 $store = Store::where('id', $transfer->to)->first();
 
@@ -243,12 +243,16 @@ class TransferController extends BaseController
                  */
                 $requestedPcsNA = []; //Array of products not available
                 $products_to_transfer = []; //Products to transfer
-                if (!is_null($request->products)) { //Check if product has beed manually edited
-                    $products_to_transfer = json_decode($request->products);
-                } else {
+                if (gettype($request->products) !== 'array' || count($request->products) < 1) { //Check if product has been manually edited
                     $products_to_transfer = $transfer->transferProducts;
+                    Log::info($products_to_transfer);
+                } else {
+                    $products_to_transfer = json_decode($request->products);
+                    Log::info($products_to_transfer);
                 }
+
                 foreach ($products_to_transfer as $product) {
+                    // Update this product incase it has been adjusted
                     $transfer->transferProducts()
                         ->where('product_id', $product->product_id)
                         ->first()
@@ -274,11 +278,14 @@ class TransferController extends BaseController
                         $wsp->update([
                             'qty_in_stock' => $wsp->qty_in_stock - $product->qty,
                         ]);
+                        Log::info('--- updated stock ----');
                         $ss = $store->storeStocks()->where('product_id', $product->id)->first();
+                        Log::info($ss);
                         if (!is_null($ss)) {
                             $ss->update([
                                 'qty_in_stock' => $ss->qty_in_stock + $product->qty,
                             ]);
+                            Log::info('--- updated stock quantity----');
                         } else {
 
                             StoreStock::create([
@@ -286,11 +293,13 @@ class TransferController extends BaseController
                                 'qty_in_stock' => $product->qty,
                                 'product_id' => $product->product_id,
                             ]);
+                            Log::info('---  stock created----');
                         }
-
                     }
                 }
                 $transfer->update(['approved_by_id' => auth()->user()->id]);
+                Log::info('---  transfer approved----');
+
                 $notification = [
                     'type' => 'Product Transfer Accepted.',
                     "tablehead" => ["From", "To", "Code"],
@@ -299,7 +308,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable$th) {
+                } catch (\Throwable $th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
 
@@ -371,7 +380,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable$th) {
+                } catch (\Throwable $th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
 
@@ -389,7 +398,6 @@ class TransferController extends BaseController
         $transfer = Transfer::where('id', $request->transfer_id)->first();
         $transfer->delete();
         return $this->sendMessage("Deleted");
-
     }
     public function storeTransfer($id)
     {
