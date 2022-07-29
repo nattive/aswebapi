@@ -42,6 +42,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
     Route::prefix('warehouse')->group(function () {
         Route::get('/', 'WarehouseController@index');
+        Route::get('/transfer-history/{warehouse_id}', 'WarehouseController@transferHistory');
+        Route::post('/transfer-history/filter-transfer/{warehouse_id}', 'WarehouseController@filterTransfer');
         Route::post('/', 'WarehouseController@store');
         Route::put('{id}', 'WarehouseController@edit');
         Route::get('{id}', 'WarehouseController@show');

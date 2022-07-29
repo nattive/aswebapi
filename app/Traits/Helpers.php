@@ -2,14 +2,12 @@
 
 namespace App\Traits;
 
-use App\Mail\InvoiceMail;
 use App\Models\Store;
+use App\Models\Transfer;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\Waybill;
-use App\Notifications\GeneralNotification;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Mail;
 
 trait Helpers
 {
@@ -86,5 +84,25 @@ trait Helpers
 
         $invoice = Waybill::whereBetween('created_at', [$from, $to])->with(['warehouse', 'products.storeStocks.store'])->get();
         return $invoice;
+    }
+
+    /**
+     * filter transfer between dates
+     * @param string  $fromDate
+     * @param string $toDate
+     * @param int $id
+     * @param string $type from | to
+     * @return Transfer
+     */
+    public function filterTransferBetweenDates($fromDate, $toDate, $id, $type = 'from')
+    {
+        $from = Carbon::parse($fromDate);
+        $to = Carbon::parse($toDate);
+        $toStore = Transfer::where('from', $id)->whereBetween('created_at', [$from, $to])->where('transfer_type','WAREHOUSE_TO_STORE')->with('transferProducts.product')->get();
+        $toWh = Transfer::where('from', $id)->whereBetween('created_at', [$from, $to])->where('transfer_type','WAREHOUSE_TO_WAREHOUSE')->with('transferProducts.product')->get();
+        $fromStore = Transfer::where('to', $id)->whereBetween('created_at', [$from, $to])->where('transfer_type','STORE_TO_WAREHOUSE')->with('transferProducts.product')->get();
+        $fromWH = Transfer::where('to', $id)->whereBetween('created_at', [$from, $to])->where('transfer_type','STORE_TO_WAREHOUSE')->with('transferProducts.product')->get();
+
+        return \compact('toStore', 'toWh', 'fromStore', 'fromWH', 'from');
     }
 }
