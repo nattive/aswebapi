@@ -59,7 +59,7 @@ class TransferController extends BaseController
         ];
         try {
             $this->updateNotification($notification);
-        } catch (\Throwable $th) {
+        } catch (\Throwable$th) {
             return $this->sendMessage("Request sent successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
         }
 
@@ -103,10 +103,6 @@ class TransferController extends BaseController
                 }
 
                 foreach ($products_to_transfer as $product) {
-                    $tp = $transfer->transferProducts()
-                        ->where('product_id', $product->product_id)
-                        ->first()
-                        ->update(['qty' => $product->qty]);
 
                     $from_store_stock = $from->storeStocks()->where('product_id', $product->product_id)->first();
                     if (is_null($from_store_stock) || $product->qty > $from_store_stock->qty_in_stock) {
@@ -128,18 +124,27 @@ class TransferController extends BaseController
                         $from_store_stock->update([
                             'qty_in_stock' => $from_store_stock->qty_in_stock - $product->qty,
                         ]);
-                        $to_store_stock = $to->storeStocks()->where('product_id', $product->id)->first();
+                        $to_store_stock = $to->storeStocks()->where('product_id', $product->id)
+                            ->first();
                         if (!is_null($to_store_stock)) {
                             $to_store_stock->update([
                                 'qty_in_stock' => $to_store_stock->qty_in_stock + $product->qty,
                             ]);
                         } else {
-                            StoreStock::create([
+                            $to_store_stock = StoreStock::create([
                                 'product_id' => $product->product_id,
                                 'store_id' => $to->id,
                                 'qty_in_stock' => $product->qty,
                             ]);
                         }
+                        $transfer->transferProducts()
+                            ->where('product_id', $product->product_id)
+                            ->first()
+                            ->update(['qty' => $product->qty,
+                                'from_qty_after_transfer' => $from_store_stock->qty_in_stock,
+                                'to_qty_after_transfer' => $to_store_stock->qty_in_stock,
+                            ]);
+
                     }
                 }
 
@@ -152,7 +157,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable $th) {
+                } catch (\Throwable$th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
 
@@ -176,10 +181,7 @@ class TransferController extends BaseController
                     $products_to_transfer = $transfer->transferProducts;
                 }
                 foreach ($products_to_transfer as $product) {
-                    $transfer->transferProducts()
-                        ->where('product_id', $product->product_id)
-                        ->first()
-                        ->update(['qty' => $product->qty]);
+
                     $ssp = $store->storeStocks()->where('product_id', $product->product_id)->first();
                     if (is_null($ssp) || $product->qty > $ssp->qty_in_stock) {
                         /**
@@ -205,13 +207,21 @@ class TransferController extends BaseController
                             $ws->update([
                                 'qty_in_stock' => $ws->qty_in_stock + $product->qty,
                             ]);
+
                         } else {
 
-                            WarehouseStock::create([
+                            $ws = WarehouseStock::create([
                                 'product_id' => $product->product_id,
                                 'warehouse_id' => $warehouse->id,
                                 'qty_in_stock' => $product->qty,
                             ]);
+                            $transfer->transferProducts()
+                                ->where('product_id', $product->product_id)
+                                ->first()
+                                ->update(['qty' => $product->qty,
+                                    'from_qty_after_transfer' => $ssp->qty_in_stock,
+                                    'to_qty_after_transfer' => $ws->qty_in_stock,
+                                ]);
                         }
                     }
                 }
@@ -224,7 +234,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable $th) {
+                } catch (\Throwable$th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
                 return $this->sendMessage(['status_message' => 'Product transfer request accepted', 'unmoved' => $requestedPcsNA]);
@@ -253,10 +263,6 @@ class TransferController extends BaseController
 
                 foreach ($products_to_transfer as $product) {
                     // Update this product incase it has been adjusted
-                    $transfer->transferProducts()
-                        ->where('product_id', $product->product_id)
-                        ->first()
-                        ->update(['qty' => $product->qty]);
 
                     $wsp = $warehouse->warehouseStocks()->where('product_id', $product->product_id)->first();
                     if (!$wsp || $product->qty > $wsp->qty_in_stock) {
@@ -278,27 +284,32 @@ class TransferController extends BaseController
                         $wsp->update([
                             'qty_in_stock' => $wsp->qty_in_stock - $product->qty,
                         ]);
-                        Log::info('--- updated stock ----');
+
                         $ss = $store->storeStocks()->where('product_id', $product->id)->first();
-                        Log::info($ss);
+
                         if (!is_null($ss)) {
                             $ss->update([
                                 'qty_in_stock' => $ss->qty_in_stock + $product->qty,
                             ]);
-                            Log::info('--- updated stock quantity----');
                         } else {
 
-                            StoreStock::create([
+                            $ss = StoreStock::create([
                                 'store_id' => $store->id,
                                 'qty_in_stock' => $product->qty,
                                 'product_id' => $product->product_id,
                             ]);
-                            Log::info('---  stock created----');
                         }
+                        $transfer->transferProducts()
+                            ->where('product_id', $product->product_id)
+                            ->first()
+                            ->update(['qty' => $product->qty,
+                                'from_qty_after_transfer' => $wsp->qty_in_stock,
+                                'to_qty_after_transfer' => $ss->qty_in_stock,
+                            ]);
+
                     }
                 }
                 $transfer->update(['approved_by_id' => auth()->user()->id]);
-                Log::info('---  transfer approved----');
 
                 $notification = [
                     'type' => 'Product Transfer Accepted.',
@@ -308,7 +319,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable $th) {
+                } catch (\Throwable$th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
 
@@ -333,10 +344,7 @@ class TransferController extends BaseController
                 }
 
                 foreach ($products_to_transfer as $product) {
-                    $tp = $transfer->transferProducts()
-                        ->where('product_id', $product->product_id)
-                        ->first()
-                        ->update(['qty' => $product->qty]);
+
                     $wsp = $warehouseFrom->warehouseStocks()->where('product_id', $product->product_id)->first();
                     if (!$wsp || $product->qty > $wsp->qty_in_stock) {
                         /**
@@ -357,18 +365,26 @@ class TransferController extends BaseController
                         $wsp->update([
                             'qty_in_stock' => $wsp->qty_in_stock - $product->qty,
                         ]);
+
                         $ss = $warehouseTo->warehouseStocks()->where('product_id', $product->id)->first();
                         if (!is_null($ss)) {
                             $ss->update([
                                 'qty_in_stock' => $ss->qty_in_stock + $product->qty,
                             ]);
                         } else {
-                            WarehouseStock::create([
+                            $ss = WarehouseStock::create([
                                 'product_id' => $product->product_id,
                                 'warehouse_id' => $warehouseTo->id,
                                 'qty_in_stock' => $product->qty,
                             ]);
                         }
+                        $transfer->transferProducts()
+                            ->where('product_id', $product->product_id)
+                            ->first()
+                            ->update(['qty' => $product->qty,
+                                'from_qty_after_transfer' => $wsp->qty_in_stock,
+                                'to_qty_after_transfer' => $ss->qty_in_stock,
+                            ]);
                     }
                 }
                 $transfer->update(['approved_by_id' => auth()->user()->id]);
@@ -380,7 +396,7 @@ class TransferController extends BaseController
                 ];
                 try {
                     $this->updateNotification($notification);
-                } catch (\Throwable $th) {
+                } catch (\Throwable$th) {
                     return $this->sendMessage("Products uploaded successfully, with notification error", ["Products uploaded successfully, but mail notification error", json_encode($th)], 500);
                 }
 

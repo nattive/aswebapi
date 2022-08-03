@@ -42,6 +42,8 @@ class TransferResource extends JsonResource
         return [
             'id' => $this->id,
             'ref_code' => $this->ref_code,
+            'toID' => $this->to,
+            'approved_by_id' => $this->approved_by_id,
             'to' => $to,
             'from' => $from,
             'products' => $this->transferProducts()->with('product')->get(),

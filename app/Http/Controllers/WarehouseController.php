@@ -10,6 +10,7 @@ use App\Models\Warehouse;
 use App\Traits\Helpers;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Http\Resources\TransferResource;
 
 class WarehouseController extends BaseController
 {
@@ -55,10 +56,10 @@ class WarehouseController extends BaseController
     public function transferHistory($id)
     {
         $warehouse = Warehouse::findOrFail($id);
-        $toStore = Transfer::where('from', $id)->where('transfer_type','WAREHOUSE_TO_STORE')->with('transferProducts.product')->get();
-        $toWh = Transfer::where('from', $id)->where('transfer_type','WAREHOUSE_TO_WAREHOUSE')->with('transferProducts.product')->get();
-        $fromStore = Transfer::where('to', $id)->where('transfer_type','STORE_TO_WAREHOUSE')->with('transferProducts.product')->get();
-        $fromWH = Transfer::where('to', $id)->where('transfer_type','STORE_TO_WAREHOUSE')->with('transferProducts.product')->get();
+        $toStore = TransferResource::collection(Transfer::where('from', $id)->where('transfer_type','WAREHOUSE_TO_STORE')->with('transferProducts.product')->latest()->get());
+        $toWh = TransferResource::collection(Transfer::where('from', $id)->where('transfer_type','WAREHOUSE_TO_WAREHOUSE')->with('transferProducts.product')->latest()->get());
+        $fromStore = TransferResource::collection(Transfer::where('to', $id)->where('transfer_type','STORE_TO_WAREHOUSE')->with('transferProducts.product')->latest()->get());
+        $fromWH = TransferResource::collection(Transfer::where('to', $id)->where('transfer_type','STORE_TO_WAREHOUSE')->with('transferProducts.product')->latest()->get());
         return $this->sendMessage(compact('toStore', 'toWh', 'fromStore', 'fromWH'));
     }
 
@@ -73,7 +74,7 @@ class WarehouseController extends BaseController
         switch ($request->type) {
             case 'today':
                 $now = Carbon::now();
-                $transfer = Transfer::where('from', $id)->where('transfer_type','WAREHOUSE_TO_STORE')->whereDate('created_at', $now)->with('transferProducts.product')->get();
+                $transfer = TransferResource::collection(Transfer::where('from', $id)->where('transfer_type','WAREHOUSE_TO_STORE')->whereDate('created_at', $now)->with('transferProducts.product')->latest()->get());
                 return $this->sendMessage($transfer);
 
             case 'this_week':
@@ -106,7 +107,7 @@ class WarehouseController extends BaseController
                 return $this->sendMessage($transfer);
 
             case 'code':
-                $waybill = Transfer::where('ref_code', $request->code)->with('transferProducts.product')->get();
+                $waybill = TransferResource::collection(Transfer::where('ref_code', $request->code)->with('transferProducts.product')->latest()->get());
                 return $this->sendMessage($waybill);
 
             default:
