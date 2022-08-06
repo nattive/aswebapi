@@ -28,4 +28,15 @@ class Store extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
+    public function getSupervisorIdAttribute($value)
+    {
+
+        $user = User::where('id', $value)->first();
+        if(\is_null($user)){
+            return User::where('role', 'DIRECTOR')->first();
+        }
+
+        return   $user;
+    }
 }
