@@ -207,7 +207,7 @@ class TransferController extends BaseController
                         $ssp->update([
                             'qty_in_stock' => $ssp->qty_in_stock - $product->qty,
                         ]);
-                        $ws = $warehouse->warehouseStocks()->where('product_id', $product->id)->first();
+                        $ws = $warehouse->warehouseStocks()->where('product_id', $product->product_id)->first();
                         if (!is_null($ws)) {
                             $ws->update([
                                 'qty_in_stock' => $ws->qty_in_stock + $product->qty,
@@ -290,7 +290,9 @@ class TransferController extends BaseController
                             'qty_in_stock' => $wsp->qty_in_stock - $product->qty,
                         ]);
 
-                        $ss = $store->storeStocks()->where('product_id', $product->id)->first();
+                        Log::info($product);
+
+                        $ss = $store->storeStocks()->where('product_id', $product->product_id)->first();
 
                         if (!is_null($ss)) {
                             $ss->update([
