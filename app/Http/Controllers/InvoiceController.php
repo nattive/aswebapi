@@ -7,6 +7,7 @@ use App\Http\Resources\InvoiceResource;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreStock;
 use App\Traits\Helpers;
@@ -58,6 +59,7 @@ class InvoiceController extends BaseController
                 'product_id' => $inv['productId'],
                 'qty' => $inv['quantity'],
                 'amount' => $inv['total'],
+                'ctn_quantity' => $inv['ctn_quantity'],
             ]);
             $ssp = StoreStock::where([["store_id", $request->store_id], ['product_id', $inv['productId']]])->first();
             if (!$ssp) {
@@ -67,8 +69,14 @@ class InvoiceController extends BaseController
                 return $this->sendMessage('Product out of stock', ['Product out of stock'], false, 422);
                 // return $this->sendMessage('Product out of stock', [compact('ssp')], false, 422);
             }
+            if ($inv['ctn_quantity']) {
+                $product = Product::find($inv['productId']);
+                $pcs = $product->pcs_per_ctn * $inv['ctn_quantity'];
+            } else {
+                $pcs = $inv['quantity'];
+            }
             $ssp->update([
-                'qty_in_stock' => $ssp->qty_in_stock - $inv['quantity'],
+                'qty_in_stock' => $ssp->qty_in_stock - $pcs,
             ]);
         }
 
@@ -79,7 +87,7 @@ class InvoiceController extends BaseController
             'store' => $store,
             'invoiceItems' => $invoice->invoiceItems()->with('product')->latest()->get(),
             "tablehead" => ["Customer Name", "Invoice Code", "Amount", "Store"],
-            "tablebody" => [[$request->customerName, $code,  $request->totalAmount, $store->name]],
+            "tablebody" => [[$request->customerName, $code, $request->totalAmount, $store->name]],
         ];
         foreach ($request->paymentInformation as $paymentInfo) {
             $invoice->paymentModes()->create([

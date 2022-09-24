@@ -108,6 +108,7 @@ class ProductController extends BaseController
             'name' => 'required|string',
             'price' => 'required|integer',
             'pcs_per_ctn' => 'nullable|integer',
+            'prize_per_ctn' => 'nullable|integer',
         ]);
         $product = Product::find($request->id);
         $product->update(
@@ -115,6 +116,7 @@ class ProductController extends BaseController
                 'name',
                 'price',
                 'pcs_per_ctn',
+                'prize_per_ctn',
             ]))
         );
 
