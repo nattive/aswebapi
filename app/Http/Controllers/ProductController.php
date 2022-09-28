@@ -106,9 +106,9 @@ class ProductController extends BaseController
         $request->validate([
             'id' => 'integer|required',
             'name' => 'required|string',
-            'price' => 'required|integer',
+            'price' => 'required',
             'pcs_per_ctn' => 'nullable|integer',
-            'prize_per_ctn' => 'nullable|integer',
+            'prize_per_ctn' => 'nullable',
         ]);
         $product = Product::find($request->id);
         $product->update(
@@ -127,7 +127,7 @@ class ProductController extends BaseController
         // return $newProduct;
         $data = $request->validate([
             'name' => 'string|required',
-            'price' => 'required|integer',
+            'price' => 'required',
             'warehouse_id' => 'required|integer',
             'waybill_id' => 'required|integer',
             'qty' => 'required|integer',
