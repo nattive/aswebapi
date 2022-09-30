@@ -59,6 +59,7 @@ class InvoiceController extends BaseController
                 'product_id' => $inv['productId'],
                 'qty' => $inv['quantity'],
                 'amount' => $inv['total'],
+                'amount_per_item' => $inv['price'],
                 'ctn_quantity' => $inv['ctn_quantity'],
             ]);
             $ssp = StoreStock::where([["store_id", $request->store_id], ['product_id', $inv['productId']]])->first();

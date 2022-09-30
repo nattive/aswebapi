@@ -104,21 +104,19 @@ class ProductController extends BaseController
         $user = auth("sanctum")->user();
 
         $request->validate([
-            'id' => 'integer|required',
-            'name' => 'required|string',
-            'price' => 'required',
+            'id' => 'exists:products,id',
+            'name' => 'nullable',
+            'price' => 'nullable',
             'pcs_per_ctn' => 'nullable|integer',
             'prize_per_ctn' => 'nullable',
         ]);
         $product = Product::find($request->id);
-        $product->update(
-            array_merge(['last_edit_by_id' => $user->id], $request->only([
-                'name',
-                'price',
-                'pcs_per_ctn',
-                'prize_per_ctn',
-            ]))
-        );
+        $product -> name = $request->name ?? $product->name;
+        $product -> price = $request->price ?? $product->price;
+        $product -> pcs_per_ctn = $request->pcs_per_ctn ?? $product->pcs_per_ctn;
+        $product -> prize_per_ctn = $request->prize_per_ctn ?? $product->prize_per_ctn;
+        $product -> last_edit_by_id = $user->id;
+        $product -> save() ;
 
         return $this->sendMessage('Product Updated');
     }
