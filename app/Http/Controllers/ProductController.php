@@ -113,7 +113,7 @@ class ProductController extends BaseController
         $product = Product::find($request->id);
         $product -> name = $request->name ?? $product->name;
         $product -> price = $request->price ?? $product->price;
-        $product -> pcs_per_ctn = $request->pcs_ per_ctn ?? $product->pcs_per_ctn;
+        $product -> pcs_per_ctn = $request->pcs_per_ctn ?? $product->pcs_per_ctn;
         $product -> prize_per_ctn = $request->prize_per_ctn ?? $product->prize_per_ctn;
         $product -> last_edit_by_id = $user->id;
         $product -> save() ;
