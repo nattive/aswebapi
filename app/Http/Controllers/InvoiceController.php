@@ -70,7 +70,7 @@ class InvoiceController extends BaseController
                 return $this->sendMessage('Product out of stock', ['Product out of stock'], false, 422);
                 // return $this->sendMessage('Product out of stock', [compact('ssp')], false, 422);
             }
-            if ($inv['ctn_quantity']) {
+            if (array_key_exists('ctn_quantity', $inv) && !is_null($inv['ctn_quantity'])) {
                 $product = Product::find($inv['productId']);
                 $pcs = $product->pcs_per_ctn * $inv['ctn_quantity'];
             } else {
